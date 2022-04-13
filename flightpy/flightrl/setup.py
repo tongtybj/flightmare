@@ -16,5 +16,6 @@ setup(
     author_email='song@ifi.uzh.ch',
     description='Flightmare: A Quadrotor Simulator.',
     long_description='',
-    packages=['rpg_baselines'],
+    # packages=['rpg_baselines'],
+    packages=find_packages(),
 )
