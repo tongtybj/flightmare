@@ -268,9 +268,14 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
 
   // update observations
   getObs(obs);
+  std::cout << "obs" << std::endl;
   std::cout<<obs<<std::endl;
+  std::cout<<'\n'<<std::endl;
+
   return computeReward(reward);
+  std::cout << "reward" << std::endl;
   std::cout<<reward<<std::endl;
+  std::cout<<'\n'<<std::endl;
 }
 
 bool VisionEnv::simDynamicObstacles(const Scalar dt) {
