@@ -268,14 +268,14 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
 
   // update observations
   getObs(obs);
-  std::cout << "obs" << std::endl;
-  std::cout<<obs<<std::endl;
-  std::cout<<'\n'<<std::endl;
+  // std::cout << "obs" << std::endl;
+  // std::cout<<obs<<std::endl;
+  // std::cout<<'\n'<<std::endl;
 
   return computeReward(reward);
-  std::cout << "reward" << std::endl;
-  std::cout<<reward<<std::endl;
-  std::cout<<'\n'<<std::endl;
+  // std::cout << "reward" << std::endl;
+  // std::cout<<reward<<std::endl;
+  // std::cout<<'\n'<<std::endl;
 }
 
 bool VisionEnv::simDynamicObstacles(const Scalar dt) {
@@ -304,7 +304,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
             (relative_pos_norm_[sort_idx] < max_detection_range_)
         : max_detection_range_;
 
-    const Scalar dist_margin = 0.5;
+    const Scalar dist_margin = 1;
     if (relative_pos_norm_[sort_idx] <=
         obstacle_radius_[sort_idx] + dist_margin) {
       // compute distance penalty
