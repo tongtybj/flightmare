@@ -6,18 +6,20 @@ environment:
   max_detection_range: 10.0 # max obstacle detection range [m], obstacles outside this range will not be detected. The number of obstacles detected is fixed to 10, if less than 10 obstacles are within detectable range, the observation is padded with 10.0
 
 rewards:
+  move_coeff: 0.5
   vel_coeff: -0.01
   collision_coeff: -0.01
   angular_vel_coeff: -0.0001
   survive_rew: 0.03
   names:
     [
+      "move_reward",
       "lin_vel_reward",
       "collision_penalty",
       "ang_vel_penalty",
       "survive_rew",
       "total",
-    ]
+    ] #this size determines the size of rewards. (cf. vision_env.cpp l460)
 
 rgb_camera:
   on: yes 

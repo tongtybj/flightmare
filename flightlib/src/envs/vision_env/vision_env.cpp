@@ -314,6 +314,9 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     idx += 1;
   }
 
+  Scalar move_reward = 
+    move_coeff_ * (quad_state_.p(QS::POSX) - quad_old_state_.p(QS::POSX));
+
   // - tracking a constant linear velocity
   Scalar lin_vel_reward =
     vel_coeff_ * (quad_state_.v - goal_linear_vel_).norm();
@@ -323,11 +326,11 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
   //  change progress reward as survive reward
   const Scalar total_reward =
-    lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_;
+    move_reward + lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_;
 
   // return all reward components for debug purposes
   // only the total reward is used by the RL algorithm
-  reward << lin_vel_reward, collision_penalty, ang_vel_penalty, survive_rew_,
+  reward << move_reward, lin_vel_reward, collision_penalty, ang_vel_penalty, survive_rew_,
     total_reward;
   return true;
 }
@@ -446,6 +449,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
 
   if (cfg["rewards"]) {
     // load reward coefficients for reinforcement learning
+    move_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();    
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
