@@ -323,7 +323,8 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
   // - angular velocity penalty, to avoid oscillations
   const Scalar ang_vel_penalty = angular_vel_coeff_ * quad_state_.w.norm();
-
+  // std::cout << angular_vel_coeff_ << std::endl;
+  
   //  change progress reward as survive reward
   const Scalar total_reward =
     move_reward + lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_;
@@ -449,7 +450,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
 
   if (cfg["rewards"]) {
     // load reward coefficients for reinforcement learning
-    move_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();    
+    move_coeff_ = cfg["rewards"]["move_coeff"].as<Scalar>();
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
