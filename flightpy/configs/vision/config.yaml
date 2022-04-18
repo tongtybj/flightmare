@@ -11,9 +11,9 @@ environment:
 # max obstacle detection range [m], obstacles outside this range will not be detected. The number of obstacles detected is fixed to 10, if less than 10 obstacles are within detectable range, the observation is padded with 10.0
 
 rewards:
-  move_coeff: 0
+  move_coeff: 1
   vel_coeff: -0.01
-  collision_coeff: -0.1
+  collision_coeff: -0.5
   angular_vel_coeff: -0.001
   survive_rew: 0.03
   names:

@@ -338,7 +338,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
-    reward = -1.0;
+    reward = -10;
     return true;
   }
 
