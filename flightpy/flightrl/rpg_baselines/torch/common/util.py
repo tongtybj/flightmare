@@ -99,7 +99,7 @@ def plot3d_traj(ax3d, pos, vel):
 
 def test_policy(env, model, render=False):
     max_ep_length = env.max_episode_steps
-    num_rollouts = 5
+    num_rollouts = 10
     frame_id = 0
     if render:
         env.connectUnity()
