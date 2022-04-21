@@ -99,6 +99,7 @@ class PPO(OnPolicyAlgorithm):
         eval_env: Union[GymEnv, str] = None,
         policy_kwargs: Optional[Dict[str, Any]] = None,
         verbose: int = 0,
+        check: bool = False,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         env_cfg: str = None,
@@ -124,6 +125,7 @@ class PPO(OnPolicyAlgorithm):
             device=device,
             create_eval_env=create_eval_env,
             eval_env=eval_env,
+            check = check,
             seed=seed,
             _init_setup_model=False,
             supported_action_spaces=(
@@ -332,7 +334,7 @@ class PPO(OnPolicyAlgorithm):
         )
 
 
-    def eval(self, iteration) -> None:
+    def eval(self, iteration, max_ep_length = 1000) -> None:
         save_path = self.logger.get_dir() + "/TestTraj"
         os.makedirs(save_path, exist_ok=True)
 
@@ -343,7 +345,7 @@ class PPO(OnPolicyAlgorithm):
         )
 
         # rollout trajectory and save the trajectory
-        traj_df = traj_rollout(self.eval_env, self.policy)
+        traj_df = traj_rollout(self.eval_env, self.policy, max_ep_length = max_ep_length)
         traj_df.to_csv(save_path + "/test_traj_{0:05d}.csv".format(iteration))
 
         # generate plots

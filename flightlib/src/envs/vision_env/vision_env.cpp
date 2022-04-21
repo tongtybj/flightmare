@@ -134,7 +134,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   getObstacleState(obstacle_obs);
 
   // Observations
-  obs << goal_linear_vel_, ori, quad_state_.v, obstacle_obs;
+  obs << quad_state_.p, ori, quad_state_.v, obstacle_obs;
   return true;
 }
 
@@ -308,7 +308,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     if (relative_pos_norm_[sort_idx] <=
         obstacle_radius_[sort_idx] + dist_margin) {
       // compute distance penalty
-      collision_penalty += collision_coeff_ * std::exp(-1.0 * relative_dist);
+      collision_penalty += collision_coeff_ * std::exp(-1.0 *collision_exp_coeff_* relative_dist);
     }
 
     idx += 1;
@@ -384,6 +384,10 @@ bool VisionEnv::getQuadState(Ref<Vector<>> obs) const {
   return false;
 }
 
+// float VisionEnv::getXstate() const{
+//   return quad_state_.p(QS::POSX);
+// }
+
 bool VisionEnv::getDepthImage(Ref<DepthImgVector<>> depth_img) {
   if (!rgb_camera_ || !rgb_camera_->getEnabledLayers()[0]) {
     logger_.error(
@@ -453,6 +457,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     move_coeff_ = cfg["rewards"]["move_coeff"].as<Scalar>();
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
+    collision_exp_coeff_ = cfg["rewards"]["collision_exp_coeff"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
 

@@ -71,6 +71,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         monitor_wrapper: bool = True,
         policy_kwargs: Optional[Dict[str, Any]] = None,
         verbose: int = 0,
+        check: bool = False,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -104,6 +105,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.rollout_buffer = None
 
         self.eval_env = eval_env
+        self.check = check
 
         if _init_setup_model:
             self._setup_model()
@@ -197,6 +199,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
+            # cfg_dir = self.logger.get_dir
             self.num_timesteps += env.num_envs
 
             # Give access to local variables
@@ -339,7 +342,15 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.env.save_rms(
                     save_dir=self.logger.get_dir() + "/RMS", n_iter=iteration
                 )
-                self.eval(iteration)
+                # self.eval(iteration)
+
+                if not self.check:
+                    if iteration == int(total_timesteps*2000/5E7):
+                        self.eval(iteration, max_ep_length = 100000)
+                    else:
+                        self.eval(iteration)
+                else:
+                    self.eval(iteration)
 
         callback.on_training_end()
 
