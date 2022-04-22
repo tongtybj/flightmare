@@ -361,6 +361,11 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
     reward = -1.0;
     return true;
   }
+
+  if (quad_state_.p(QS::POSX) > goal_){
+    reward = 50;
+    return true;
+  }
   return false;
 }
 
@@ -442,6 +447,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     goal_linear_vel_ = Vector<3>(goal_vel_vec.data());
     max_detection_range_ =
       cfg["environment"]["max_detection_range"].as<Scalar>();
+    goal_ = cfg["environment"]["goal"].as<Scalar>();
   }
 
   if (cfg["simulation"]) {
