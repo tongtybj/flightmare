@@ -58,27 +58,7 @@ void VisionEnv::init() {
     logger_.error(
       "Cannot config RGB Camera. Something wrong with the config file");
   }
-
-  obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
-                       std::string("/flightpy/configs/vision/") +
-                       difficulty_level_ + std::string("/") + env_folder_;
-
-  // add dynamic objects
-  std::string dynamic_object_yaml =
-    obstacle_cfg_path_ + std::string("/dynamic_obstacles.yaml");
-  if (!configDynamicObjects(dynamic_object_yaml)) {
-    logger_.error(
-      "Cannot config Dynamic Object Yaml. Something wrong with the config "
-      "file");
-  }
-
-  // add static objects
-  static_object_csv_ =
-    obstacle_cfg_path_ + std::string("/static_obstacles.csv");
-  if (!configStaticObjects(static_object_csv_)) {
-    logger_.error(
-      "Cannot config Static Object. Something wrong with the config file");
-  }
+  changeLevel();
 
   // use single rotor control or bodyrate control
   Scalar max_force = quad_ptr_->getDynamics().getForceMax();
@@ -113,8 +93,10 @@ bool VisionEnv::reset(Ref<Vector<>> obs) {
   cmd_.collective_thrust = 0;
   cmd_.omega.setZero();
 
+  // changeLevel();
   // obtain observations
   getObs(obs);
+  // std::cout <<"call reset" << std::endl;
   return true;
 }
 
@@ -268,14 +250,8 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
 
   // update observations
   getObs(obs);
-  // std::cout << "obs" << std::endl;
-  // std::cout<<obs<<std::endl;
-  // std::cout<<'\n'<<std::endl;
 
   return computeReward(reward);
-  // std::cout << "reward" << std::endl;
-  // std::cout<<reward<<std::endl;
-  // std::cout<<'\n'<<std::endl;
 }
 
 bool VisionEnv::simDynamicObstacles(const Scalar dt) {
@@ -323,7 +299,6 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
   // - angular velocity penalty, to avoid oscillations
   const Scalar ang_vel_penalty = angular_vel_coeff_ * quad_state_.w.norm();
-  // std::cout << angular_vel_coeff_ << std::endl;
   
   //  change progress reward as survive reward
   const Scalar total_reward =
@@ -339,12 +314,14 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
     reward = -10;
+    // std::cout << "terminate by collision" << std::endl;
     return true;
   }
 
   // simulation time out
   if (cmd_.t >= max_t_ - sim_dt_) {
     reward = 0.0;
+    // std::cout << "terminate by time" << std::endl;
     return true;
   }
 
@@ -359,11 +336,13 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
                  quad_state_.x(QS::POSZ) <= world_box_[5] - safty_threshold;
   if (!x_valid || !y_valid || !z_valid) {
     reward = -1.0;
+    // std::cout << "terminate by box" << std::endl;
     return true;
   }
 
   if (quad_state_.p(QS::POSX) > goal_){
     reward = 50;
+    // std::cout << "terminate by reaching the goal" << std::endl;
     return true;
   }
   return false;
@@ -439,7 +418,7 @@ bool VisionEnv::getImage(Ref<ImgVector<>> img, const bool rgb) {
 
 bool VisionEnv::loadParam(const YAML::Node &cfg) {
   if (cfg["environment"]) {
-    difficulty_level_ = cfg["environment"]["level"].as<std::string>();
+    difficulty_level_list_ = cfg["environment"]["level"].as<std::vector<std::string>>();
     env_folder_ = cfg["environment"]["env_folder"].as<std::string>();
     world_box_ = cfg["environment"]["world_box"].as<std::vector<Scalar>>();
     std::vector<Scalar> goal_vel_vec =
@@ -496,6 +475,42 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
   std::vector<Scalar> render_offset =
     scene_cfg_node[scene_idx]["render_offset"].as<std::vector<Scalar>>();
   unity_render_offset_ = Vector<3>(render_offset.data());
+  return true;
+}
+bool VisionEnv::changeLevel(){
+  chooseLevel();
+  // std::cout << difficulty_level_ <<std::endl;
+  obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
+                       std::string("/flightpy/configs/vision/") +
+                       difficulty_level_ + std::string("/") + env_folder_;
+
+
+  // add dynamic objects
+  std::string dynamic_object_yaml =
+    obstacle_cfg_path_ + std::string("/dynamic_obstacles.yaml");
+  if (!configDynamicObjects(dynamic_object_yaml)) {
+    logger_.error(
+      "Cannot config Dynamic Object Yaml. Something wrong with the config "
+      "file");
+  }
+
+  // add static objects
+  static_object_csv_ =
+    obstacle_cfg_path_ + std::string("/static_obstacles.csv");
+  if (!configStaticObjects(static_object_csv_)) {
+    logger_.error(
+      "Cannot config Static Object. Something wrong with the config file");
+  }
+  return true;
+}
+
+bool VisionEnv::chooseLevel() {
+  std::size_t size_ = difficulty_level_list_.size();
+  // std::cout << size_ <<std::endl;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  int rand_int_ = gen() % size_;
+  difficulty_level_ = difficulty_level_list_[rand_int_];
   return true;
 }
 

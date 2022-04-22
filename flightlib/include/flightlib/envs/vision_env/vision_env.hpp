@@ -10,6 +10,9 @@
 // yaml cpp
 #include <yaml-cpp/yaml.h>
 
+// random choice of level and env
+#include <random>
+
 // flightlib
 #include "flightlib/bridges/unity_bridge.hpp"
 #include "flightlib/common/command.hpp"
@@ -81,6 +84,8 @@ class VisionEnv final : public EnvBase {
 
 
   bool configCamera(const YAML::Node &cfg_node);
+  bool changeLevel();
+  bool chooseLevel();
   bool configDynamicObjects(const std::string &yaml_file);
   bool configStaticObjects(const std::string &csv_file);
 
@@ -135,6 +140,7 @@ class VisionEnv final : public EnvBase {
 
 
   int num_detected_obstacles_;
+  std::vector<std::string> difficulty_level_list_;
   std::string difficulty_level_;
   std::string env_folder_;
   std::vector<Scalar> world_box_;
