@@ -343,9 +343,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     save_dir=self.logger.get_dir() + "/RMS", n_iter=iteration
                 )
                 # self.eval(iteration)
-
+                # print(self.batch_size)
+                # print(total_timesteps)
+                # print(int(total_timesteps/self.batch_size))
+                # print(iteration)
                 if not self.check:
-                    if iteration == int(total_timesteps*2000/5E7):
+                    if iteration == int(total_timesteps/self.batch_size):
                         self.eval(iteration, max_ep_length = 100000)
                     else:
                         self.eval(iteration)
