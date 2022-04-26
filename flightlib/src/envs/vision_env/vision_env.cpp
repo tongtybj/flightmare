@@ -16,8 +16,8 @@ VisionEnv::VisionEnv(const std::string &cfg_path, const int env_id)
   // load configuration file
   cfg_ = YAML::LoadFile(cfg_path);
   //
-  init();
   env_id_ = env_id;
+  init();
 }
 
 VisionEnv::VisionEnv(const YAML::Node &cfg_node, const int env_id) : EnvBase() {
@@ -341,7 +341,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
   }
 
   if (quad_state_.p(QS::POSX) > goal_){
-    reward = 50;
+    reward = 50*move_coeff_;
     // std::cout << "terminate by reaching the goal" << std::endl;
     return true;
   }
@@ -479,11 +479,16 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
 }
 bool VisionEnv::changeLevel(){
   chooseLevel();
-  // std::cout << difficulty_level_ <<std::endl;
+  // std::size_t size_ = difficulty_level_list_.size();
+  // std::cout << size_ <<std::endl;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  int env_id = gen() % 100;
   obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
                        std::string("/flightpy/configs/vision/") +
-                       difficulty_level_ + std::string("/") + env_folder_;
-
+                       difficulty_level_ + std::string("/") +
+                       std::string("environment_") + std::to_string(env_id);
+  // std::cout << obstacle_cfg_path_<< std::endl;
 
   // add dynamic objects
   std::string dynamic_object_yaml =
