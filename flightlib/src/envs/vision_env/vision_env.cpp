@@ -24,8 +24,8 @@ VisionEnv::VisionEnv(const YAML::Node &cfg_node, const int env_id) : EnvBase() {
   cfg_ = cfg_node;
 
   //
-  init();
   env_id_ = env_id;
+  init();
 }
 
 void VisionEnv::init() {
@@ -121,7 +121,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
 }
 
 bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
-  Scalar safty_threshold = 0.2;
+  // Scalar safty_threshold = 0.2;
   if (dynamic_objects_.size() <= 0 || static_objects_.size() <= 0) {
     logger_.error("No dynamic or static obstacles.");
     return false;
@@ -153,7 +153,7 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     obstacle_radius_.push_back(obs_radius);
 
     //
-    if (obstacle_dist < obs_radius+safty_threshold) {
+    if (obstacle_dist < obs_radius) {
       is_collision_ = true;
     }
   }
@@ -176,7 +176,7 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     Scalar obs_radius = static_objects_[i]->getScale()[0] / 2;
     obstacle_radius_.push_back(obs_radius);
 
-    if (obstacle_dist < obs_radius+safty_threshold) {
+    if (obstacle_dist < obs_radius) {
       is_collision_ = true;
     }
   }
@@ -482,14 +482,14 @@ bool VisionEnv::changeLevel(){
   chooseLevel();
   // std::size_t size_ = difficulty_level_list_.size();
   // std::cout << size_ <<std::endl;
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  int env_id = gen() % 100;
+  // std::random_device rd;
+  // std::mt19937 gen(rd());
+  // int env_id = gen() % 100;
   obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
                        std::string("/flightpy/configs/vision/") +
                        difficulty_level_ + std::string("/") +
-                       std::string("environment_") + std::to_string(env_id);
-  // std::cout << obstacle_cfg_path_<< std::endl;
+                       std::string("environment_") + std::to_string(env_id_ % 100);
+  std::cout << obstacle_cfg_path_<< std::endl;
 
   // add dynamic objects
   std::string dynamic_object_yaml =
@@ -511,12 +511,12 @@ bool VisionEnv::changeLevel(){
 }
 
 bool VisionEnv::chooseLevel() {
-  std::size_t size_ = difficulty_level_list_.size();
-  // std::cout << size_ <<std::endl;
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  int rand_int_ = gen() % size_;
-  difficulty_level_ = difficulty_level_list_[rand_int_];
+  // std::size_t size_ = difficulty_level_list_.size();
+  // // std::cout << size_ <<std::endl;
+  // std::random_device rd;
+  // std::mt19937 gen(rd());
+  // int rand_int_ = gen() % size_;
+  difficulty_level_ = difficulty_level_list_[0];
   return true;
 }
 
