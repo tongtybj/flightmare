@@ -121,6 +121,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
 }
 
 bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
+  Scalar safty_threshold = 0.2;
   if (dynamic_objects_.size() <= 0 || static_objects_.size() <= 0) {
     logger_.error("No dynamic or static obstacles.");
     return false;
@@ -152,7 +153,7 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     obstacle_radius_.push_back(obs_radius);
 
     //
-    if (obstacle_dist < obs_radius) {
+    if (obstacle_dist < obs_radius+safty_threshold) {
       is_collision_ = true;
     }
   }
@@ -175,7 +176,7 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     Scalar obs_radius = static_objects_[i]->getScale()[0] / 2;
     obstacle_radius_.push_back(obs_radius);
 
-    if (obstacle_dist < obs_radius) {
+    if (obstacle_dist < obs_radius+safty_threshold) {
       is_collision_ = true;
     }
   }
