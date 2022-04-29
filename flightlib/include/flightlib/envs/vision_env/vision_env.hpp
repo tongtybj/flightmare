@@ -13,6 +13,8 @@
 // random choice of level and env
 #include <random>
 
+#include <typeinfo>
+
 // flightlib
 #include "flightlib/bridges/unity_bridge.hpp"
 #include "flightlib/common/command.hpp"

@@ -197,15 +197,22 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
         // Vector<3> b_s = getspherical(r*relative_pos[sort_idx]);
 
         Vector<3> rtf = getspherical(R*relative_pos[sort_idx]);
+
+        // std::cout << "obs of obstacle" << std::endl;
+        // std::cout << typeid(obstacle_radius_[sort_idx]) << std::endl;
+        // std::cout << typeid(rtf[0]) << std::endl;
+        // std::cout << typeid(max_detection_range_) << std::endl;
+        // std::cout << typeid(asin(obstacle_radius_[sort_idx]/rtf[0])) << std::endl;
+        // std::cout << ' ' << std::endl;
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState)
-          << rtf, atan(obstacle_radius_[sort_idx]/rtf[0]);
+          << rtf, obstacle_radius_[sort_idx];
       } else {
         // if obstacles are beyong detection range
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState) =
           Vector<4>(max_detection_range_, PI/2,
-                    PI/2, atan(obstacle_radius_[sort_idx]/max_detection_range_));
+                    PI/2, obstacle_radius_[sort_idx]);
       }
 
     } else {
