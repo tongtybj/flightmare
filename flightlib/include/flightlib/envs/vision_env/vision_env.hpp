@@ -25,6 +25,7 @@
 #include "flightlib/objects/unity_object.hpp"
 #include "flightlib/sensors/rgb_camera.hpp"
 
+#define PI 3.14159265359
 namespace flightlib {
 
 namespace visionenv {
@@ -69,6 +70,7 @@ class VisionEnv final : public EnvBase {
   bool getDepthImage(Ref<DepthImgVector<>> img) override;
 
   bool getObstacleState(Ref<Vector<>> obstacle_obs);
+  Vector<3> getspherical(Vector<3> cartesian);
   // get quadrotor states
   bool getQuadAct(Ref<Vector<>> act) const;
   bool getQuadState(Ref<Vector<>> state) const;

@@ -190,16 +190,22 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
       // if enough obstacles in the environment
       if (relative_pos_norm_[sort_idx] <= max_detection_range_) {
         // if obstacles are within detection range
+        Matrix<3, 3> r = quad_state_.R();
+        r.transposeInPlace();
+        // Vector<3> b_c = r*relative_pos[sort_idx];
+        // Vector<3> b_s = getspherical(b_c);
+        // Vector<3> b_s = getspherical(r*relative_pos[sort_idx]);
+
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState)
-          << relative_pos[sort_idx],
+          << getspherical(r*relative_pos[sort_idx]),
           obstacle_radius_[sort_idx];
       } else {
         // if obstacles are beyong detection range
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState) =
-          Vector<4>(max_detection_range_, max_detection_range_,
-                    max_detection_range_, obstacle_radius_[sort_idx]);
+          Vector<4>(max_detection_range_, PI/2,
+                    PI/2, obstacle_radius_[sort_idx]);
       }
 
     } else {
@@ -207,13 +213,23 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
       obs_state.segment<visionenv::kNObstaclesState>(
         idx * visionenv::kNObstaclesState) =
         Vector<visionenv::kNObstaclesState>(max_detection_range_,
-                                            max_detection_range_,
-                                            max_detection_range_, 0.0);
+                                            PI/2,
+                                            PI/2, 0.0);
     }
     idx += 1;
   }
 
   return true;
+}
+
+Vector<3> VisionEnv::getspherical(Vector<3> cartesian){
+  Scalar r=sqrt(pow(cartesian[0], 2) + pow(cartesian[1], 2) + pow(cartesian[2], 2));
+  Vector<3> spherical
+  = {r,
+  acos(cartesian[2] / r),
+  atan2(cartesian[1],cartesian[0])
+  };
+  return spherical;
 }
 
 bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
