@@ -190,22 +190,22 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
       // if enough obstacles in the environment
       if (relative_pos_norm_[sort_idx] <= max_detection_range_) {
         // if obstacles are within detection range
-        Matrix<3, 3> r = quad_state_.R();
-        r.transposeInPlace();
+        Matrix<3, 3> R = quad_state_.R();
+        R.transposeInPlace();
         // Vector<3> b_c = r*relative_pos[sort_idx];
         // Vector<3> b_s = getspherical(b_c);
         // Vector<3> b_s = getspherical(r*relative_pos[sort_idx]);
 
+        Vector<3> rtf = getspherical(R*relative_pos[sort_idx]);
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState)
-          << getspherical(r*relative_pos[sort_idx]),
-          obstacle_radius_[sort_idx];
+          << rtf, atan(obstacle_radius_[sort_idx]/rtf[0]);
       } else {
         // if obstacles are beyong detection range
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState) =
           Vector<4>(max_detection_range_, PI/2,
-                    PI/2, obstacle_radius_[sort_idx]);
+                    PI/2, atan(obstacle_radius_[sort_idx]/max_detection_range_));
       }
 
     } else {
