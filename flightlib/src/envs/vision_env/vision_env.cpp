@@ -116,7 +116,8 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   getObstacleState(obstacle_obs);
 
   // Observations
-  obs << goal_linear_vel_, ori, quad_state_.v, obstacle_obs;
+  obs << goal_linear_vel_, ori,quad_state_.p, quad_state_.v, obstacle_obs, 
+  world_box_[2], world_box_[3], world_box_[4],world_box_[5];
   return true;
 }
 
@@ -359,7 +360,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
   bool z_valid = quad_state_.x(QS::POSZ) >= world_box_[4] + safty_threshold &&
                  quad_state_.x(QS::POSZ) <= world_box_[5] - safty_threshold;
   if (!x_valid || !y_valid || !z_valid) {
-    reward = -1.0;
+    reward = -5;
     // std::cout << "terminate by box" << std::endl;
     return true;
   }
