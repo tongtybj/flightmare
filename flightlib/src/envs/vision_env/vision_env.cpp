@@ -135,7 +135,17 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   getObstacleState(obstacle_obs);
 
   // Observations
-  obs << goal_linear_vel_, ori, quad_state_.v, obstacle_obs;
+  Vector<4> boundary;
+  const Scalar safty_threshold = 0.1;
+  boundary << world_box_[2] + safty_threshold,
+    world_box_[3] - safty_threshold,
+    world_box_[4] + safty_threshold,
+    world_box_[5] - safty_threshold;
+
+  Vector<2> pos_yz;
+  pos_yz << quad_state_.p(QS::POSY), quad_state_.p(QS::POSZ);
+  
+  obs << goal_linear_vel_, boundary, ori, quad_state_.v, pos_yz, obstacle_obs;
   return true;
 }
 
