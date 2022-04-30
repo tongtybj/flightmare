@@ -97,14 +97,18 @@ def plot3d_traj(ax3d, pos, vel):
     # z_f = (zmax - zmin) / (xmax - xmin)
     # ax3d.set_box_aspect((x_f, y_f * 2, z_f * 2))
 
-def test_policy(env, model, render=False):
-    max_ep_length = env.max_episode_steps
+def test_policy(env, model, render=False, max_ep_length = 0):
+    if max_ep_length == 0:
+        max_ep_length = env.max_episode_steps
+
     num_rollouts = 5
     frame_id = 0
+    ave_final_x = 0
     if render:
         env.connectUnity()
     for n_roll in range(num_rollouts):
         obs, done, ep_len = env.reset(), False, 0
+        final_x = 0
         while not (done or (ep_len >= max_ep_length)):
             # print(obs)
             act, _ = model.predict(obs, deterministic=True)
@@ -112,6 +116,12 @@ def test_policy(env, model, render=False):
 
             #
             env.render(ep_len)
+
+            if done:
+                print("final x: {}".format(final_x))
+                ave_final_x += final_x
+            else:
+                final_x = env.getQuadState()[0][1]
 
             # ======Gray Image=========
             # gray_img = np.reshape(
@@ -141,5 +151,6 @@ def test_policy(env, model, render=False):
             frame_id += 1
 
     #
+    print("average final x: {}".format(ave_final_x/n_roll))
     if render:
         env.disconnectUnity()
