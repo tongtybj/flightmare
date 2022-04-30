@@ -122,6 +122,7 @@ class VisionEnv final : public EnvBase {
 
   // Define reward for training
   Scalar vel_coeff_, collision_coeff_, angular_vel_coeff_, survive_rew_;
+  Scalar collision_terminal_rew_, bound_terminal_rew_; 
   Vector<3> goal_linear_vel_;
   bool is_collision_;
 

@@ -329,7 +329,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
-    reward = -1.0;
+    reward = collision_terminal_rew_;
     return true;
   }
 
@@ -349,7 +349,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
   bool z_valid = quad_state_.x(QS::POSZ) >= world_box_[4] + safty_threshold &&
                  quad_state_.x(QS::POSZ) <= world_box_[5] - safty_threshold;
   if (!x_valid || !y_valid || !z_valid) {
-    reward = -1.0;
+    reward = bound_terminal_rew_;
     return true;
   }
   return false;
@@ -445,6 +445,8 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
+    collision_terminal_rew_ =  cfg["rewards"]["collision_terminal_rew"].as<Scalar>();
+    bound_terminal_rew_ =  cfg["rewards"]["bound_terminal_rew"].as<Scalar>();
 
     // load reward settings
     reward_names_ = cfg["rewards"]["names"].as<std::vector<std::string>>();
