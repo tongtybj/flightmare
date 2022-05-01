@@ -101,7 +101,7 @@ def test_policy(env, model, render=False, max_ep_length = 0):
     if max_ep_length == 0:
         max_ep_length = env.max_episode_steps
 
-    num_rollouts = 5
+    num_rollouts = 20
     frame_id = 0
     ave_final_x = 0
     if render:
@@ -118,10 +118,16 @@ def test_policy(env, model, render=False, max_ep_length = 0):
             env.render(ep_len)
 
             if done:
-                print("final x: {}".format(final_x))
+                if final_x == 0:
+                    # reset the test, becuase the drone collide with object in the initial state
+                    obs, done, ep_len = env.reset(), False, 0
+                    print("reset the test, becuase the drone collide with object in the initial state")
+                    continue
                 ave_final_x += final_x
+                print("final x: {}".format(final_x))
             else:
                 final_x = env.getQuadState()[0][1]
+
 
             # ======Gray Image=========
             # gray_img = np.reshape(
