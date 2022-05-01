@@ -41,9 +41,9 @@ columns = [
 ]
 
 
-def traj_rollout(env, policy):
+def traj_rollout(env, policy, max_ep_length = 1000):
     traj_df = pd.DataFrame(columns=columns)
-    max_ep_length = 1000
+    
     obs = env.reset(random=False)
     episode_id = np.zeros(shape=(env.num_envs, 1))
     for _ in range(max_ep_length):
