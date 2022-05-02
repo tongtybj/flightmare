@@ -300,20 +300,23 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     if (idx >= visionenv::kNObstacles) break;
 
     Scalar relative_dist =
-      relative_pos_norm_[sort_idx]
-        ? (relative_pos_norm_[sort_idx] > 0) &&
+      (relative_pos_norm_[sort_idx] > 0) &&
             (relative_pos_norm_[sort_idx] < max_detection_range_)
-        : max_detection_range_;
+        ? relative_pos_norm_[sort_idx]
+        : max_detection_range_; // Papameretes of how far the quadrotor can detect sphere?
+    
+    // std::cout << "dist margin is " << relative_dist - obstacle_radius_[sort_idx]<< std::endl;
 
-    const Scalar dist_margin = 1;
-    if (relative_pos_norm_[sort_idx] <=
-        obstacle_radius_[sort_idx] + dist_margin) {
+    // const Scalar dist_margin = 2;
+    if (relative_pos_norm_[sort_idx] - obstacle_radius_[sort_idx] <=
+        dist_margin) {
       // compute distance penalty
-      collision_penalty += collision_coeff_ * std::exp(-1.0 *collision_exp_coeff_* relative_dist);
+      collision_penalty += collision_coeff_ * std::exp(-1.0 * collision_exp_coeff_* (relative_dist-obstacle_radius_[sort_idx]));
     }
-
     idx += 1;
   }
+  // std::cout << "collision_penalty is " << collision_penalty << std::endl;
+  // std::cout << ' ' << std::endl;
 
   Scalar move_reward = 
     move_coeff_ * (quad_state_.p(QS::POSX) - quad_old_state_.p(QS::POSX));
@@ -345,7 +348,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
 
   // simulation time out
   if (cmd_.t >= max_t_ - sim_dt_) {
-    reward = 0.0;
+    reward = -1;
     // std::cout << "terminate by time" << std::endl;
     return true;
   }
@@ -468,8 +471,11 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     collision_exp_coeff_ = cfg["rewards"]["collision_exp_coeff"].as<Scalar>();
+    dist_margin = cfg["rewards"]["dist_margin"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
+
+    // std::cout << dist_margin << std::endl;
 
     // load reward settings
     reward_names_ = cfg["rewards"]["names"].as<std::vector<std::string>>();
