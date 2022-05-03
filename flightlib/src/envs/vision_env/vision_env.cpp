@@ -114,6 +114,8 @@ bool VisionEnv::reset(Ref<Vector<>> obs) {
   cmd_.collective_thrust = 0;
   cmd_.omega.setZero();
 
+  prev_pos_ = quad_state_.p;
+
   // obtain observations
   getObs(obs);
   return true;
@@ -142,10 +144,11 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
     world_box_[4] + safty_threshold,
     world_box_[5] - safty_threshold;
 
-  Vector<2> pos_yz;
-  pos_yz << quad_state_.x(QS::POSY), quad_state_.x(QS::POSZ);
-  
-  obs << goal_linear_vel_, boundary, ori, quad_state_.v, pos_yz, obstacle_obs;
+  // Vector<2> pos_yz;
+  // pos_yz << quad_state_.x(QS::POSY), quad_state_.x(QS::POSZ);
+
+  // obs << goal_linear_vel_, boundary, ori, quad_state_.v, pos_yz, obstacle_obs;
+  obs << goal_linear_vel_, boundary, ori, quad_state_.v, quad_state_.p, obstacle_obs;
   return true;
 }
 
@@ -303,16 +306,12 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) break;
 
-    Scalar relative_dist =
-      relative_pos_norm_[sort_idx]
-        ? (relative_pos_norm_[sort_idx] > 0) &&
-            (relative_pos_norm_[sort_idx] < max_detection_range_)
-        : max_detection_range_;
+    Scalar relative_dist =  relative_pos_norm_[sort_idx] - obstacle_radius_[sort_idx];
 
     const Scalar dist_margin = 0.5;
-    if (relative_pos_norm_[sort_idx] <=
-        obstacle_radius_[sort_idx] + dist_margin) {
+    if (relative_dist <= dist_margin) {
       // compute distance penalty
+      relative_dist = 1;
       collision_penalty += collision_coeff_ * std::exp(-1.0 * relative_dist);
     }
 
@@ -326,20 +325,24 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
   // - angular velocity penalty, to avoid oscillations
   const Scalar ang_vel_penalty = angular_vel_coeff_ * quad_state_.w.norm();
 
+  // move reward
+  const Scalar move_reward = move_coeff_ * (quad_state_.x(QS::POSX) - prev_pos_[0]);
+  prev_pos_ = quad_state_.p;
+
   //  change progress reward as survive reward
   const Scalar total_reward =
-    lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_;
+    lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_ + move_reward;
 
   // return all reward components for debug purposes
   // only the total reward is used by the RL algorithm
-  reward << lin_vel_reward, collision_penalty, ang_vel_penalty, survive_rew_,
+  reward << lin_vel_reward, collision_penalty, ang_vel_penalty, survive_rew_, move_reward,
     total_reward;
   return true;
 }
 
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
-    reward = collision_terminal_rew_;
+    reward = fabs(quad_state_.x(QS::VELX)) * collision_terminal_rew_;
     return true;
   }
 
@@ -454,6 +457,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
+    move_coeff_ = cfg["rewards"]["move_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
     collision_terminal_rew_ =  cfg["rewards"]["collision_terminal_rew"].as<Scalar>();
     bound_terminal_rew_ =  cfg["rewards"]["bound_terminal_rew"].as<Scalar>();
