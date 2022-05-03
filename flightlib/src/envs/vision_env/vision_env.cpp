@@ -116,8 +116,8 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   getObstacleState(obstacle_obs);
 
   // Observations
-  obs << goal_linear_vel_, ori,quad_state_.p, quad_state_.v, obstacle_obs, 
-  world_box_[2], world_box_[3], world_box_[4],world_box_[5];
+  obs << goal_linear_vel_, ori, quad_state_.x(QS::POSY), quad_state_.x(QS::POSZ), quad_state_.v, obstacle_obs, 
+  world_box_[2], world_box_[3], world_box_[4], world_box_[5], quad_state_.w;
   return true;
 }
 
@@ -341,7 +341,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
-    reward = -10;
+    reward = -20;
     // std::cout << "terminate by collision" << std::endl;
     return true;
   }

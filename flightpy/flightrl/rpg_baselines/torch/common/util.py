@@ -128,7 +128,7 @@ def test_policy(env, model, render=False):
             # cv2.imwrite("./images/img_{0:05d}.png".format(frame_id), rgb_img)
             # cv2.waitKey(100)
 
-            # # # ======Depth Image=========
+            # # ======Depth Image=========
             # depth_img = np.reshape(env.getDepthImage()[
             #                        0], (env.img_height, env.img_width))
             # os.makedirs("./depth", exist_ok=True)
