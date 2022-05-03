@@ -157,6 +157,6 @@ def test_policy(env, model, render=False, max_ep_length = 0):
             frame_id += 1
 
     #
-    print("average final x: {}".format(ave_final_x/n_roll))
+    print("average final x: {}".format(ave_final_x/num_rollouts))
     if render:
         env.disconnectUnity()
