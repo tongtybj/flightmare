@@ -5,6 +5,9 @@ environment:
   goal_vel: [5.0, 0.0, 0.0] # goal velicty for tracking vx, vy, vz
   max_detection_range: 10.0 # max obstacle detection range [m], obstacles outside this range will not be detected. The number of obstacles detected is fixed to 10, if less than 10 obstacles are within detectable range, the observation is padded with 10.0
 
+train:
+  total_timesteps: 200000000 #20 * 1e7
+
 rewards:
   vel_coeff: -0.01
   collision_coeff: -0.1
