@@ -60,9 +60,16 @@ void VisionEnv::init() {
       "Cannot config RGB Camera. Something wrong with the config file");
   }
 
+  std::string env_name = env_folder_;
+  if (cfg_["simulation"]["num_envs"].as<int>() > 1) {
+    // training mode, use multiple env
+    env_name = std::string("environment_") + std::to_string(env_id_%100);
+    logger_.warn("env_name: %s", env_name.c_str());
+  }
+
   obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
                        std::string("/flightpy/configs/vision/") +
-                       difficulty_level_ + std::string("/") + std::string("environment_") + std::to_string(env_id_%100);
+                       difficulty_level_ + std::string("/") + env_name;
 
   // add dynamic objects
   std::string dynamic_object_yaml =
