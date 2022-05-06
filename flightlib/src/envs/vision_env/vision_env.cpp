@@ -116,7 +116,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   getObstacleState(obstacle_obs);
 
   // Observations
-  obs << goal_linear_vel_, ori, quad_state_.x(QS::POSY), quad_state_.x(QS::POSZ), quad_state_.v, obstacle_obs, 
+  obs << goal_linear_vel_, ori, quad_state_.p, quad_state_.v, obstacle_obs, 
   world_box_[2], world_box_[3], world_box_[4], world_box_[5], quad_state_.w;
   return true;
 }
@@ -299,11 +299,11 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) break;
 
-    Scalar relative_dist =
-      (relative_pos_norm_[sort_idx] > 0) &&
-            (relative_pos_norm_[sort_idx] < max_detection_range_)
-        ? relative_pos_norm_[sort_idx]
-        : max_detection_range_; // Papameretes of how far the quadrotor can detect sphere?
+    // Scalar relative_dist =
+    //   (relative_pos_norm_[sort_idx] > 0) &&
+    //         (relative_pos_norm_[sort_idx] < max_detection_range_)
+    //     ? relative_pos_norm_[sort_idx]
+    //     : max_detection_range_; // Papameretes of how far the quadrotor can detect sphere?
     
     // std::cout << "dist margin is " << relative_dist - obstacle_radius_[sort_idx]<< std::endl;
 
@@ -311,7 +311,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     if (relative_pos_norm_[sort_idx] - obstacle_radius_[sort_idx] <=
         dist_margin) {
       // compute distance penalty
-      collision_penalty += collision_coeff_ * std::exp(-1.0 * collision_exp_coeff_* (relative_dist-obstacle_radius_[sort_idx]));
+      collision_penalty += collision_coeff_ * std::exp(-1.0 * 1.0);
     }
     idx += 1;
   }
@@ -341,7 +341,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
-    reward = -20;
+    reward = fabs(quad_state_.x(QS::VELX)) * -10.0;
     // std::cout << "terminate by collision" << std::endl;
     return true;
   }
