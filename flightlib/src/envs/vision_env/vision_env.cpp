@@ -64,7 +64,6 @@ void VisionEnv::init() {
   if (cfg_["simulation"]["num_envs"].as<int>() > 1) {
     // training mode, use multiple env
     env_name = std::string("environment_") + std::to_string(env_id_%100);
-    logger_.warn("env_name: %s", env_name.c_str());
   }
 
   obstacle_cfg_path_ = getenv("FLIGHTMARE_PATH") +
@@ -313,13 +312,10 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) break;
 
+    // compute distance penalty
     Scalar relative_dist =  relative_pos_norm_[sort_idx] - obstacle_radius_[sort_idx];
-
-    const Scalar dist_margin = 0.5;
-    if (relative_dist <= dist_margin) {
-      // compute distance penalty
-      relative_dist = 1;
-      collision_penalty += collision_coeff_ * std::exp(-1.0 * relative_dist);
+    if (relative_dist <= collision_dist_margin_) {
+      collision_penalty += collision_coeff_ * std::exp(collision_exp_coeff_ * relative_dist);
     }
 
     idx += 1;
@@ -463,6 +459,8 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     // load reward coefficients for reinforcement learning
     vel_coeff_ = cfg["rewards"]["vel_coeff"].as<Scalar>();
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
+    collision_exp_coeff_ = cfg["rewards"]["collision_exp_coeff"].as<Scalar>();
+    collision_dist_margin_ = cfg["rewards"]["collision_dist_margin"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
     move_coeff_ = cfg["rewards"]["move_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
