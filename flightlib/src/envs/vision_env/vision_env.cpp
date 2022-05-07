@@ -112,16 +112,18 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   Vector<9> ori = Map<Vector<>>(quad_state_.R().data(), quad_state_.R().size());
 
   // get N most closest obstacles as the observation
-  Vector<visionenv::kNObstacles * visionenv::kNObstaclesState> obstacle_obs;
-  getObstacleState(obstacle_obs);
+  Vector<2*visionenv::Cuts*visionenv::Cuts> sphericalboxel;
+  getObstacleState(sphericalboxel);
+
+  // std::cout << sphericalboxel << std::endl;
 
   // Observations
-  obs << goal_linear_vel_, ori, quad_state_.p, quad_state_.v, obstacle_obs, 
+  obs << goal_linear_vel_, ori, quad_state_.p, quad_state_.v, sphericalboxel, 
   world_box_[2], world_box_[3], world_box_[4], world_box_[5], quad_state_.w;
   return true;
 }
 
-bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
+bool VisionEnv::getObstacleState(Ref<Vector<2*visionenv::Cuts*visionenv::Cuts>> sphericalboxel) {
   // Scalar safty_threshold = 0.2;
   if (dynamic_objects_.size() <= 0 || static_objects_.size() <= 0) {
     logger_.error("No dynamic or static obstacles.");
@@ -184,60 +186,92 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
 
   // std::cout << relative_pos_norm_ << std::endl;
   size_t idx = 0;
+  obstacle_num = 0; // obstacle_num is declared at hpp
+  std::vector<Vector<3>, Eigen::aligned_allocator<Vector<3>>> pos_b_list;
+  std::vector<Scalar> pos_norm_list;
+  std::vector<Scalar> obs_radius_list;
+  Matrix<3, 3> R = quad_state_.R();
+  R.transposeInPlace();
+
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
-    if (idx >= visionenv::kNObstacles) break;
-
-    if (idx < relative_pos.size()) {
-      // if enough obstacles in the environment
-      if (relative_pos_norm_[sort_idx] <= max_detection_range_) {
-        // if obstacles are within detection range
-        Matrix<3, 3> R = quad_state_.R();
-        R.transposeInPlace();
-        // Vector<3> b_c = r*relative_pos[sort_idx];
-        // Vector<3> b_s = getspherical(b_c);
-        // Vector<3> b_s = getspherical(r*relative_pos[sort_idx]);
-
-        Vector<3> rtf = getspherical(R*relative_pos[sort_idx]);
-
-        // std::cout << "obs of obstacle" << std::endl;
-        // std::cout << typeid(obstacle_radius_[sort_idx]) << std::endl;
-        // std::cout << typeid(rtf[0]) << std::endl;
-        // std::cout << typeid(max_detection_range_) << std::endl;
-        // std::cout << typeid(asin(obstacle_radius_[sort_idx]/rtf[0])) << std::endl;
-        // std::cout << ' ' << std::endl;
-        obs_state.segment<visionenv::kNObstaclesState>(
-          idx * visionenv::kNObstaclesState)
-          << rtf, obstacle_radius_[sort_idx];
-      } else {
-        // if obstacles are beyong detection range
-        obs_state.segment<visionenv::kNObstaclesState>(
-          idx * visionenv::kNObstaclesState) =
-          Vector<4>(max_detection_range_, PI/2,
-                    PI/2, obstacle_radius_[sort_idx]);
+    if (idx >= visionenv::kNObstacles) {
+      obstacle_num = idx;
+      break;
       }
-
-    } else {
-      // if not enough obstacles in the environment
-      obs_state.segment<visionenv::kNObstaclesState>(
-        idx * visionenv::kNObstaclesState) =
-        Vector<visionenv::kNObstaclesState>(max_detection_range_,
-                                            PI/2,
-                                            PI/2, 0.0);
-    }
+      // if enough obstacles in the environment
+      if (idx < relative_pos.size() && relative_pos_norm_[sort_idx] <= max_detection_range_) {
+        pos_b_list.push_back(R*relative_pos[sort_idx]);
+        pos_norm_list.push_back(relative_pos_norm_[sort_idx]);
+        obs_radius_list.push_back(obstacle_radius_[sort_idx]);
+      } else {
+      obstacle_num = idx;
+      break;
+      }
     idx += 1;
   }
 
+  // std::cout << "obstacle_num is " << obstacle_num << std::endl;
+  
+  sphericalboxel = getsphericalboxel(pos_b_list, pos_norm_list, obs_radius_list);
   return true;
 }
 
-Vector<3> VisionEnv::getspherical(Vector<3> cartesian){
-  Scalar r=sqrt(pow(cartesian[0], 2) + pow(cartesian[1], 2) + pow(cartesian[2], 2));
-  Vector<3> spherical
-  = {r,
-  acos(cartesian[2] / r),
-  atan2(cartesian[1],cartesian[0])
+Vector<2*visionenv::Cuts*visionenv::Cuts> VisionEnv::getsphericalboxel(std::vector<Vector<3>,
+ Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list){
+    Vector<2*visionenv::Cuts*visionenv::Cuts> obstacle_obs;
+    for (size_t t = 0; t < visionenv::Cuts; ++t) {
+        for (int f = -1*visionenv::Cuts; f < visionenv::Cuts; ++f) {
+            Scalar tcell = (t+0.5)*(PI/visionenv::Cuts);
+            Scalar fcell = (f+0.5)*(PI/visionenv::Cuts);
+            obstacle_obs[t*2*visionenv::Cuts+(f+visionenv::Cuts)] = getClosestDistance(pos_b_list, pos_norm_list, obs_radius_list, tcell,fcell);
+        }
+    }   
+    return obstacle_obs;
+}
+
+Scalar VisionEnv::getClosestDistance(std::vector<Vector<3>,
+ Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list, 
+Scalar tcell, Scalar fcell){
+    Vector<3> Cell = getCartesianFromAng(tcell,fcell);
+    Scalar rmin = max_detection_range_;
+    for (size_t i = 0; i < obstacle_num; ++i) {
+        Vector<3> Cartesian = pos_b_list[i]; //R*relative_pos[sort_idx]
+        Scalar cdist = pos_norm_list[i];
+        Scalar size = obs_radius_list[i]; //obstacle_radius_[sort_idx]
+        Scalar ts = std::asin(size/cdist);
+        Scalar tb = std::acos(inner_product(Cell,Cartesian)/(1*cdist));
+        if (tb < ts){
+            comp(rmin,getclosestpoint(cdist,tb,size));
+        }
+    }
+    return rmin/max_detection_range_;
+}
+
+Vector<3> VisionEnv::getCartesianFromAng(Scalar t, Scalar f){
+  Vector<3> cartesian
+  = {std::cos(t),
+    std::sin(t)*std::cos(f),
+  std::sin(t)*std::sin(f)
   };
-  return spherical;
+  return cartesian;
+}
+
+Scalar VisionEnv::inner_product(Vector<3> a, Vector<3> b){
+    Scalar inner_product = 0;
+  for (int i = 0; i < 3; i++) {
+    inner_product += a[i] * b[i];
+  }
+  return inner_product;
+}
+
+void VisionEnv::comp(Scalar& rmin, Scalar r){
+    if (r<rmin){
+        rmin=r;
+    }
+}
+
+Scalar VisionEnv::getclosestpoint(Scalar distance, Scalar theta, Scalar size){
+    return distance*std::cos(theta) - sqrt(std::pow(size,2)-std::pow(distance*std::sin(theta),2));
 }
 
 bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,

@@ -39,9 +39,11 @@ enum Vision : int {
   kNObstacles = 10,
   kNObstaclesState = 4,
 
+  Cuts = 8,
+
   // observations
   kObs = 0,
-  kNObs = 3+9+3+3+4+3 + kNObstacles * kNObstaclesState,
+  kNObs = 3+9+3+3+4+3 + 2*Cuts*Cuts,
 
   // control actions
   kAct = 0,
@@ -71,8 +73,17 @@ class VisionEnv final : public EnvBase {
   bool getImage(Ref<ImgVector<>> img, const bool rgb = true) override;
   bool getDepthImage(Ref<DepthImgVector<>> img) override;
 
-  bool getObstacleState(Ref<Vector<>> obstacle_obs);
-  Vector<3> getspherical(Vector<3> cartesian);
+  bool getObstacleState(Ref<Vector<2*visionenv::Cuts*visionenv::Cuts>> sphericalboxel);
+  Vector<2*visionenv::Cuts*visionenv::Cuts> getsphericalboxel(std::vector<Vector<3>,
+  Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list);
+  Scalar getClosestDistance(std::vector<Vector<3>,
+  Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list, 
+  Scalar tcell, Scalar fcell);
+  Vector<3> getCartesianFromAng(Scalar t, Scalar f);
+  Scalar inner_product(Vector<3> a, Vector<3> b);
+  void comp(Scalar& rmin, Scalar r);
+  Scalar getclosestpoint(Scalar distance, Scalar theta, Scalar size);
+
   // get quadrotor states
   bool getQuadAct(Ref<Vector<>> act) const;
   bool getQuadState(Ref<Vector<>> state) const;
@@ -135,6 +146,8 @@ class VisionEnv final : public EnvBase {
   Scalar move_coeff_, vel_coeff_, collision_coeff_,collision_exp_coeff_, angular_vel_coeff_, survive_rew_, dist_margin;
   Vector<3> goal_linear_vel_;
   bool is_collision_;
+
+  size_t obstacle_num;
 
   // max detection range (meter)
   Scalar max_detection_range_;
