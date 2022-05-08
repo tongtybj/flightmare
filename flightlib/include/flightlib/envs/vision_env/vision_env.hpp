@@ -174,6 +174,7 @@ class VisionEnv final : public EnvBase {
   std::string obstacle_cfg_path_;
   int num_dynamic_objects_;
   int num_static_objects_;
+  bool verbose_;
 };
 
 }  // namespace flightlib

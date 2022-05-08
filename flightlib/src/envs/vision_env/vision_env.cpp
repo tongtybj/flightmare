@@ -94,6 +94,11 @@ void VisionEnv::init() {
   act_mean_ << (max_force / quad_ptr_->getMass()) / 2, 0.0, 0.0, 0.0;
   act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
     max_omega.y(), max_omega.z();
+
+  if (cfg_["simulation"]["num_envs"].as<int>() == 1)
+    verbose_ = true;
+  else
+    verbose_ = false;
 }
 
 VisionEnv::~VisionEnv() {}
@@ -346,11 +351,13 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 bool VisionEnv::isTerminalState(Scalar &reward) {
   if (is_collision_) {
     reward = fabs(quad_state_.x(QS::VELX)) * collision_terminal_rew_;
+    if (verbose_) logger_.warn("collision");
     return true;
   }
 
   // simulation time out
   if (cmd_.t >= max_t_ - sim_dt_) {
+    if (verbose_) logger_.warn("out of time: max time: %f", max_t_);
     reward = 0.0;
     return true;
   }
@@ -358,16 +365,21 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
   // world boundling box check
   // - x, y, and z
   const Scalar safty_threshold = 0.1;
-  bool x_valid = quad_state_.x(QS::POSX) >= world_box_[0] + safty_threshold &&
-                 quad_state_.x(QS::POSX) <= world_box_[1] - safty_threshold;
+  bool x_valid = quad_state_.x(QS::POSX) >= world_box_[0] + safty_threshold;
   bool y_valid = quad_state_.x(QS::POSY) >= world_box_[2] + safty_threshold &&
                  quad_state_.x(QS::POSY) <= world_box_[3] - safty_threshold;
   bool z_valid = quad_state_.x(QS::POSZ) >= world_box_[4] + safty_threshold &&
                  quad_state_.x(QS::POSZ) <= world_box_[5] - safty_threshold;
   if (!x_valid || !y_valid || !z_valid) {
     reward = bound_terminal_rew_;
+    if (verbose_) logger_.warn("out of boundary, xyz validity: %d, %d, %d", x_valid, y_valid, z_valid);
     return true;
   }
+  if (quad_state_.x(QS::POSX) > world_box_[1] - safty_threshold) {
+    reward = 0;
+    return true;
+  }
+  
   return false;
 }
 
