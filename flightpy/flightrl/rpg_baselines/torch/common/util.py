@@ -103,17 +103,17 @@ def test_policy(env, model, render=False):
     num_rollouts = 100
     frame_id = 0
     final_x_list = []
+    ave_vel_list = []
     if render:
         env.connectUnity()
     for n_roll in range(num_rollouts):
         obs, done, ep_len = env.reset(), False, 0
         final_x = 0
+        final_t = 0
         while not (done or (ep_len >= max_ep_length)):
             # print(obs)
             act, _ = model.predict(obs, deterministic=True)
             obs, rew, done, info = env.step(act)
-
-
             #
             env.render(ep_len)
 
@@ -153,8 +153,11 @@ def test_policy(env, model, render=False):
                     continue
                 final_x_list.append(final_x)
                 print("final x: {}".format(final_x))
+                ave_vel_list.append(final_x/final_t)
+                print("ave vel: {}".format(final_x/final_t))
             else:
                 final_x = env.getQuadState()[0][1]
+                final_t = env.getQuadState()[0][0]
 
 
 
@@ -164,5 +167,7 @@ def test_policy(env, model, render=False):
 
     print("average final x: {}".format(sum(final_x_list)/num_rollouts))
     print("standard deviation x: {}".format(statistics.pstdev(final_x_list)))
+    print("average vel: {}".format(sum(ave_vel_list)/num_rollouts))
+    print("standard deviation vel: {}".format(statistics.pstdev(ave_vel_list)))
     if render:
         env.disconnectUnity()
