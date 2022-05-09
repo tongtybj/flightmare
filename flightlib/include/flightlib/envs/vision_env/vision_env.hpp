@@ -36,14 +36,14 @@ enum Vision : int {
   //
   kNQuadState = 25,
 
-  kNObstacles = 10,
+  kNObstacles = 30,
   kNObstaclesState = 4,
 
   Cuts = 8,
 
   // observations
   kObs = 0,
-  kNObs = 3+9+3+3+4+3 + 2*Cuts*Cuts,
+  kNObs = 3+9+3+3+4+3 + Cuts*Cuts,
 
   // control actions
   kAct = 0,
@@ -73,8 +73,8 @@ class VisionEnv final : public EnvBase {
   bool getImage(Ref<ImgVector<>> img, const bool rgb = true) override;
   bool getDepthImage(Ref<DepthImgVector<>> img) override;
 
-  bool getObstacleState(Ref<Vector<2*visionenv::Cuts*visionenv::Cuts>> sphericalboxel);
-  Vector<2*visionenv::Cuts*visionenv::Cuts> getsphericalboxel(std::vector<Vector<3>,
+  bool getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel);
+  Vector<visionenv::Cuts*visionenv::Cuts> getsphericalboxel(std::vector<Vector<3>,
   Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list);
   Scalar getClosestDistance(std::vector<Vector<3>,
   Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list, 

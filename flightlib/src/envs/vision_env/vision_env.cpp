@@ -112,7 +112,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   Vector<9> ori = Map<Vector<>>(quad_state_.R().data(), quad_state_.R().size());
 
   // get N most closest obstacles as the observation
-  Vector<2*visionenv::Cuts*visionenv::Cuts> sphericalboxel;
+  Vector<visionenv::Cuts*visionenv::Cuts> sphericalboxel;
   getObstacleState(sphericalboxel);
 
   // std::cout << sphericalboxel << std::endl;
@@ -123,7 +123,7 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   return true;
 }
 
-bool VisionEnv::getObstacleState(Ref<Vector<2*visionenv::Cuts*visionenv::Cuts>> sphericalboxel) {
+bool VisionEnv::getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel) {
   // Scalar safty_threshold = 0.2;
   if (dynamic_objects_.size() <= 0 || static_objects_.size() <= 0) {
     logger_.error("No dynamic or static obstacles.");
@@ -216,16 +216,16 @@ bool VisionEnv::getObstacleState(Ref<Vector<2*visionenv::Cuts*visionenv::Cuts>> 
   return true;
 }
 
-Vector<2*visionenv::Cuts*visionenv::Cuts> VisionEnv::getsphericalboxel(std::vector<Vector<3>,
+Vector<visionenv::Cuts*visionenv::Cuts> VisionEnv::getsphericalboxel(std::vector<Vector<3>,
  Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list){
-    Vector<2*visionenv::Cuts*visionenv::Cuts> obstacle_obs;
-    for (size_t t = 0; t < visionenv::Cuts; ++t) {
-        for (int f = -1*visionenv::Cuts; f < visionenv::Cuts; ++f) {
-            Scalar tcell = (t+0.5)*(PI/visionenv::Cuts);
-            Scalar fcell = (f+0.5)*(PI/visionenv::Cuts);
-            obstacle_obs[t*2*visionenv::Cuts+(f+visionenv::Cuts)] = getClosestDistance(pos_b_list, pos_norm_list, obs_radius_list, tcell,fcell);
+    Vector<visionenv::Cuts*visionenv::Cuts> obstacle_obs;
+    for (int t = -visionenv::Cuts/2; t < visionenv::Cuts/2; ++t) {
+        for (int f = -visionenv::Cuts/2; f < visionenv::Cuts/2; ++f) {
+            Scalar tcell = (t+0.5)*(PI/visionenv::Cuts)/2;
+            Scalar fcell = (f+0.5)*(PI/visionenv::Cuts)/2;
+            obstacle_obs[(t+visionenv::Cuts/2)*visionenv::Cuts+(f+visionenv::Cuts/2)] = getClosestDistance(pos_b_list, pos_norm_list, obs_radius_list, tcell,fcell);
         }
-    }   
+    }
     return obstacle_obs;
 }
 
@@ -247,11 +247,11 @@ Scalar tcell, Scalar fcell){
     return rmin/max_detection_range_;
 }
 
-Vector<3> VisionEnv::getCartesianFromAng(Scalar t, Scalar f){
+Vector<3> VisionEnv::getCartesianFromAng(Scalar theta, Scalar phi){
   Vector<3> cartesian
-  = {std::cos(t),
-    std::sin(t)*std::cos(f),
-  std::sin(t)*std::sin(f)
+  = {std::cos(theta)*std::cos(phi),
+    std::sin(theta)*std::cos(phi),
+    std::sin(phi)
   };
   return cartesian;
 }
