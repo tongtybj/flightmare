@@ -14,6 +14,7 @@ rewards:
   collision_coeff: -0.1 # collision_coeff * exp(collision_exp_coeff * dist)
   collision_exp_coeff: -2.0 # exp(collision_exp_coeff * dist)
   collision_dist_margin: 0.5 # m
+  collision_dist_max_margin: 1.0 # m
   boundary_coeff: -0.1 
   boundary_exp_coeff: -1.0 
   boundary_dist_margin: 0.5

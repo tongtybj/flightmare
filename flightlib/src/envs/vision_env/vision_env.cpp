@@ -86,6 +86,8 @@ void VisionEnv::init() {
     logger_.error(
       "Cannot config Static Object. Something wrong with the config file");
   }
+  // logger_.error("dynamic_objects_ %d, static_objects_: %d",
+  // 		dynamic_objects_.size(), static_objects_.size());
 
   // use single rotor control or bodyrate control
   Scalar max_force = quad_ptr_->getDynamics().getForceMax();
@@ -171,6 +173,7 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
   // make sure to reset the collision penalty
   relative_pos_norm_.clear();
   obstacle_radius_.clear();
+  obstacle_phi_.clear();
 
   //
   quad_ptr_->getState(&quad_state_);
@@ -194,6 +197,11 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     Scalar obs_radius = dynamic_objects_[i]->getScale()[0] / 2;
     obstacle_radius_.push_back(obs_radius);
 
+    // store the obsracle phi
+    Scalar phi = atan2(sqrt(delta_pos[1] * delta_pos[1] + delta_pos[2] * delta_pos[2]),
+		       delta_pos[0]);
+    obstacle_phi_.push_back(phi);
+    
     //
     if (obstacle_dist < obs_radius) {
       is_collision_ = true;
@@ -218,6 +226,12 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     Scalar obs_radius = static_objects_[i]->getScale()[0] / 2;
     obstacle_radius_.push_back(obs_radius);
 
+    // store the obsracle phi
+    Scalar phi = atan2(sqrt(delta_pos[1] * delta_pos[1] + delta_pos[2] * delta_pos[2]),
+		       delta_pos[0]);
+    obstacle_phi_.push_back(phi);
+
+    
     if (obstacle_dist < obs_radius) {
       is_collision_ = true;
     }
@@ -229,28 +243,31 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
     if (idx >= visionenv::kNObstacles) break;
 
     if (idx < relative_pos.size()) {
+
+      Vector<3> pos = relative_pos[sort_idx];
+      Scalar theta = atan2(pos[1], pos[2]);
+      Scalar phi = obstacle_phi_[sort_idx];
+      Scalar d = relative_pos_norm_[sort_idx];
+      Scalar r = obstacle_radius_[sort_idx];
+	
       // if enough obstacles in the environment
-      if (relative_pos_norm_[sort_idx] <= max_detection_range_) {
+      if (d <= max_detection_range_) {
         // if obstacles are within detection range
         obs_state.segment<visionenv::kNObstaclesState>(
-          idx * visionenv::kNObstaclesState)
-          << relative_pos[sort_idx],
-          obstacle_radius_[sort_idx];
+          idx * visionenv::kNObstaclesState) =
+	Vector<4>(d, phi, theta, r);
+          ;
       } else {
         // if obstacles are beyong detection range
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState) =
-          Vector<4>(max_detection_range_, max_detection_range_,
-                    max_detection_range_, obstacle_radius_[sort_idx]);
+	Vector<4>(max_detection_range_, phi, theta, r);
       }
-
     } else {
       // if not enough obstacles in the environment
       obs_state.segment<visionenv::kNObstaclesState>(
         idx * visionenv::kNObstaclesState) =
-        Vector<visionenv::kNObstaclesState>(max_detection_range_,
-                                            max_detection_range_,
-                                            max_detection_range_, 0.0);
+	Vector<4>(max_detection_range_, M_PI, 0, 0);
     }
     idx += 1;
   }
@@ -317,10 +334,19 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) break;
 
+    Scalar d = relative_pos_norm_[sort_idx];
+    Scalar r = obstacle_radius_[sort_idx];
+    Scalar phi = obstacle_phi_[sort_idx];
+
     // compute distance penalty
-    Scalar relative_dist =  relative_pos_norm_[sort_idx] - obstacle_radius_[sort_idx];
-    if (relative_dist <= collision_dist_margin_) {
-      collision_penalty += collision_coeff_ * std::exp(collision_exp_coeff_ * relative_dist);
+    Scalar relative_dist =  d - r;
+    Scalar phi_margin = 0.4;
+    Scalar dist_exp_const_rate = -4.5 * 2 / M_PI; // psi: [0, pi/2] => rate*psi: [1, 0]
+    Scalar collision_dist_margin = (collision_dist_max_margin_ - collision_dist_margin_) * std::exp( dist_exp_const_rate * phi) + collision_dist_margin_;
+    Scalar collision_coeff = collision_dist_margin / collision_dist_margin_ * collision_coeff_;
+    if (relative_dist <= collision_dist_margin && phi <= M_PI/2 + phi_margin) {
+    //if (relative_dist <= collision_dist_margin) {
+      collision_penalty += collision_coeff * std::exp(collision_exp_coeff_ * relative_dist);
     }
 
     idx += 1;
@@ -490,6 +516,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     collision_exp_coeff_ = cfg["rewards"]["collision_exp_coeff"].as<Scalar>();
     collision_dist_margin_ = cfg["rewards"]["collision_dist_margin"].as<Scalar>();
+    collision_dist_max_margin_ = cfg["rewards"]["collision_dist_max_margin"].as<Scalar>();
     boundary_coeff_ = cfg["rewards"]["boundary_coeff"].as<Scalar>();
     boundary_exp_coeff_ = cfg["rewards"]["boundary_exp_coeff"].as<Scalar>();
     boundary_dist_margin_ = cfg["rewards"]["boundary_dist_margin"].as<Scalar>();

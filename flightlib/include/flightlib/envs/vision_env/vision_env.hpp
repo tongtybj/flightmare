@@ -131,8 +131,10 @@ class VisionEnv final : public EnvBase {
 
   // max detection range (meter)
   Scalar max_detection_range_;
+  Scalar collision_dist_max_margin_;
   std::vector<Scalar> relative_pos_norm_;
   std::vector<Scalar> obstacle_radius_;
+  std::vector<Scalar> obstacle_phi_;
 
 
   int num_detected_obstacles_;
