@@ -281,6 +281,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rms_stop_iteration = int(5 * 1e7 / 2 / (self.n_steps * self.env.num_envs))
         rms_update_interval = int(250000 / (self.n_steps * self.env.num_envs))
         print("rms_stop_iteration: {}, rms_update_interval: {}".format(rms_stop_iteration, rms_update_interval))
+        best_move_reward = 40 * self.env_cfg["rewards"]["move_coeff"]
+        move_reward = 0
 
         while self.num_timesteps < total_timesteps:
 
@@ -329,6 +331,21 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
                 self.logger.dump(step=self.num_timesteps)
 
+            if "move_reward" in self.env.reward_names:
+                index = self.env.reward_names.index("move_reward")
+                move_reward = safe_mean([ep_info[self.env.reward_names[index]]
+                                         for ep_info in self.ep_info_buffer])
+                if move_reward > best_move_reward:
+                    print("iteration{}, update best move reward : {}".format(iteration, move_reward))
+                    best_move_reward = move_reward
+
+                    policy_path = self.logger.get_dir() + "/Policy"
+                    os.makedirs(policy_path, exist_ok=True)
+                    self.policy.save(policy_path + "/iter_{0:05d}.pth".format(iteration))
+                    self.env.save_rms(
+                        save_dir=self.logger.get_dir() + "/RMS", n_iter=iteration
+                    )
+                    self.eval(iteration)
             self.train()
 
             if iteration % rms_update_interval == 0 and iteration <= rms_stop_iteration:
