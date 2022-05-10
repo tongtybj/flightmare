@@ -122,10 +122,11 @@ class VisionEnv final : public EnvBase {
   Logger logger_{"VisionEnv"};
 
   // Define reward for training
-  Scalar vel_coeff_, collision_coeff_, angular_vel_coeff_, move_coeff_, survive_rew_;
+  Scalar vel_coeff_, collision_coeff_, boundary_coeff_, angular_vel_coeff_, move_coeff_, survive_rew_;
   Scalar collision_dist_margin_, collision_exp_coeff_;
+  Scalar boundary_dist_margin_, boundary_exp_coeff_;  
   Scalar collision_terminal_rew_, bound_terminal_rew_; 
-  Vector<3> goal_linear_vel_;
+  Vector<3> goal_linear_vel_, goal_linear_pos_;
   bool is_collision_;
 
   // max detection range (meter)

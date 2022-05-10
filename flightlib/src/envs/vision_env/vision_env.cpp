@@ -326,6 +326,20 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     idx += 1;
   }
 
+  // compuate boundary penalty
+  Scalar boundary_penalty = 0;
+  Scalar boundary_y_dist = std::min(fabs(quad_state_.x(QS::POSY) - world_box_[2]),
+				    fabs(quad_state_.x(QS::POSY) - world_box_[3]));
+  Scalar boundary_z_dist = std::min(fabs(quad_state_.x(QS::POSZ) - world_box_[4]),
+				    fabs(quad_state_.x(QS::POSZ) - world_box_[5]));
+  if (boundary_y_dist <= boundary_dist_margin_) {
+    boundary_penalty += boundary_coeff_ * std::exp(boundary_exp_coeff_ * boundary_y_dist);
+  }
+  if (boundary_z_dist <= boundary_dist_margin_) {
+    boundary_penalty += boundary_coeff_ * std::exp(boundary_exp_coeff_ * boundary_z_dist);
+  }
+
+
   // - tracking a constant linear velocity
   Scalar lin_vel_reward =
     vel_coeff_ * (quad_state_.v - goal_linear_vel_).norm();
@@ -339,11 +353,11 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
 
   //  change progress reward as survive reward
   const Scalar total_reward =
-    lin_vel_reward + collision_penalty + ang_vel_penalty + survive_rew_ + move_reward;
+    lin_vel_reward + collision_penalty + boundary_penalty + ang_vel_penalty + survive_rew_ + move_reward;
 
   // return all reward components for debug purposes
   // only the total reward is used by the RL algorithm
-  reward << lin_vel_reward, collision_penalty, ang_vel_penalty, survive_rew_, move_reward,
+  reward << lin_vel_reward, collision_penalty, boundary_penalty, ang_vel_penalty, survive_rew_, move_reward,
     total_reward;
   return true;
 }
@@ -358,7 +372,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
   // simulation time out
   if (cmd_.t >= max_t_ - sim_dt_) {
     if (verbose_) logger_.warn("out of time: max time: %f", max_t_);
-    reward = 0.0;
+    reward = -1;
     return true;
   }
 
@@ -375,8 +389,8 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
     if (verbose_) logger_.warn("out of boundary, xyz validity: %d, %d, %d", x_valid, y_valid, z_valid);
     return true;
   }
-  if (quad_state_.x(QS::POSX) > world_box_[1] - safty_threshold) {
-    reward = 0;
+  if (quad_state_.x(QS::POSX) > goal_linear_pos_[0]) {
+    reward = 50 * move_coeff_;
     return true;
   }
   
@@ -455,6 +469,9 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     std::vector<Scalar> goal_vel_vec =
       cfg["environment"]["goal_vel"].as<std::vector<Scalar>>();
     goal_linear_vel_ = Vector<3>(goal_vel_vec.data());
+    std::vector<Scalar> goal_pos_vec =
+      cfg["environment"]["goal_pos"].as<std::vector<Scalar>>();
+    goal_linear_pos_ = Vector<3>(goal_pos_vec.data());
     max_detection_range_ =
       cfg["environment"]["max_detection_range"].as<Scalar>();
   }
@@ -473,6 +490,9 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     collision_coeff_ = cfg["rewards"]["collision_coeff"].as<Scalar>();
     collision_exp_coeff_ = cfg["rewards"]["collision_exp_coeff"].as<Scalar>();
     collision_dist_margin_ = cfg["rewards"]["collision_dist_margin"].as<Scalar>();
+    boundary_coeff_ = cfg["rewards"]["boundary_coeff"].as<Scalar>();
+    boundary_exp_coeff_ = cfg["rewards"]["boundary_exp_coeff"].as<Scalar>();
+    boundary_dist_margin_ = cfg["rewards"]["boundary_dist_margin"].as<Scalar>();
     angular_vel_coeff_ = cfg["rewards"]["angular_vel_coeff"].as<Scalar>();
     move_coeff_ = cfg["rewards"]["move_coeff"].as<Scalar>();
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
