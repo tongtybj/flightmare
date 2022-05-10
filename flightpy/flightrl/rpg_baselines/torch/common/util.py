@@ -5,6 +5,7 @@ import cv2
 import os
 from mpl_toolkits.mplot3d import Axes3D
 import statistics
+import matplotlib.pyplot as plt
 
 columns = [
     "episode_id",
@@ -167,6 +168,8 @@ def test_policy(env, model, render=False):
 
     print("average final x: {}".format(sum(final_x_list)/num_rollouts))
     print("standard deviation x: {}".format(statistics.pstdev(final_x_list)))
+    plt.hist(final_x_list)
+    plt.show()
     print("average vel: {}".format(sum(ave_vel_list)/num_rollouts))
     print("standard deviation vel: {}".format(statistics.pstdev(ave_vel_list)))
     if render:

@@ -1,6 +1,6 @@
 environment:
   level: ["medium"]
-  env_folder: 0 # beginning of env
+  env_folder: 100 # beginning of env
   world_box: [-20, 80, -10, 10, 0.0, 10]
   goal_vel: [5.0, 0.0, 0.0]
   max_detection_range: 10.0
@@ -19,7 +19,7 @@ rewards:
   dist_margin: 2
   angular_vel_coeff: -0.0001
   survive_rew: 0.03
-  world_box_coeff: [-0.0005, -0.00025] # y,z
+  world_box_coeff: [-0.0005, -0.002] # y,z
   names:
     [
       "move_reward",
