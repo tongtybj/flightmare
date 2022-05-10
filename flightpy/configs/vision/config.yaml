@@ -1,5 +1,5 @@
 environment:
-  level: ["medium"]
+  level: ["hard"]
   env_folder: 100 # beginning of env
   world_box: [-20, 80, -10, 10, 0.0, 10]
   goal_vel: [5.0, 0.0, 0.0]
