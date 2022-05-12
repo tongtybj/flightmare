@@ -344,7 +344,7 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     Scalar dist_exp_const_rate = -4.5 * 2 / M_PI; // psi: [0, pi/2] => rate*psi: [1, 0]
     Scalar collision_dist_margin = (collision_dist_max_margin_ - collision_dist_margin_) * std::exp( dist_exp_const_rate * phi) + collision_dist_margin_;
     Scalar collision_coeff = collision_dist_margin / collision_dist_margin_ * collision_coeff_;
-    if (relative_dist <= collision_dist_margin && phi <= M_PI/2 + phi_margin) {
+    if (relative_dist <= collision_dist_margin_ && phi <= M_PI/2 + phi_margin) {
     //if (relative_dist <= collision_dist_margin) {
       collision_penalty += collision_coeff * std::exp(collision_exp_coeff_ * relative_dist);
     }
