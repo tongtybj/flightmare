@@ -101,7 +101,7 @@ def test_policy(env, model, render=False, max_ep_length = 0):
     if max_ep_length == 0:
         max_ep_length = env.max_episode_steps
 
-    num_rollouts = 20
+    num_rollouts = 100
     frame_id = 0
     ave_final_x = 0
     if render:

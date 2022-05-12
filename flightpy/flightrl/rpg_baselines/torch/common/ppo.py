@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 #
 import pandas as pd
+import json
 import scipy
 import torch as th
 from gym import spaces
@@ -343,7 +344,7 @@ class PPO(OnPolicyAlgorithm):
         )
 
         # rollout trajectory and save the trajectory
-        traj_df = traj_rollout(self.eval_env, self.policy, 10000)
+        traj_df = traj_rollout(self.eval_env, self.policy, 100000)
         traj_df.to_csv(save_path + "/test_traj_{0:05d}.csv".format(iteration))
 
         # generate plots
@@ -380,4 +381,8 @@ class PPO(OnPolicyAlgorithm):
         save_path = self.logger.get_dir() + "/TestTraj" + "/Plots"
         os.makedirs(save_path, exist_ok=True)
         fig1.savefig(save_path + "/traj_3d_{0:05d}.png".format(iteration))
-        print("ave final x: {}".format(ave_final_x/len(episode_idx)))
+        ave_final_x = ave_final_x/len(episode_idx)
+        print("ave final x: {}".format(ave_final_x))
+
+        with open(self.logger.get_dir() + '/eval.txt', mode='a') as f:
+            f.write('iteration: {} average x: {}\n'.format(iteration, ave_final_x))
