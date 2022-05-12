@@ -344,7 +344,7 @@ class PPO(OnPolicyAlgorithm):
         )
 
         # rollout trajectory and save the trajectory
-        traj_df = traj_rollout(self.eval_env, self.policy, 100000)
+        traj_df = traj_rollout(self.eval_env, self.policy, 20000)
         traj_df.to_csv(save_path + "/test_traj_{0:05d}.csv".format(iteration))
 
         # generate plots
