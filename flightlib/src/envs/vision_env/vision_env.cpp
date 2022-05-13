@@ -238,37 +238,62 @@ bool VisionEnv::getObstacleState(Ref<Vector<>> obs_state) {
   }
 
   // std::cout << relative_pos_norm_ << std::endl;
+
   size_t idx = 0;
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) break;
 
     if (idx < relative_pos.size()) {
-
-      Vector<3> pos = relative_pos[sort_idx];
-      Scalar theta = atan2(pos[1], pos[2]);
-      Scalar phi = obstacle_phi_[sort_idx];
-      Scalar d = relative_pos_norm_[sort_idx];
-      Scalar r = obstacle_radius_[sort_idx];
-	
-      // if enough obstacles in the environment
-      if (d <= max_detection_range_) {
-        // if obstacles are within detection range
+      // if enough obstacles in the environment                                                                                                                                                                                                                                                                          
+      if (relative_pos_norm_[sort_idx] <= max_detection_range_) {
+        // if obstacles are within detection range                                                                                                                                                                                                                                                                       
         obs_state.segment<visionenv::kNObstaclesState>(
-          idx * visionenv::kNObstaclesState) =
-	Vector<4>(d, phi, theta, r);
-          ;
+          idx * visionenv::kNObstaclesState)
+          << relative_pos[sort_idx],
+          obstacle_radius_[sort_idx];
       } else {
-        // if obstacles are beyong detection range
+        // if obstacles are beyong detection range                                                                                                                                                                                                                                                                       
         obs_state.segment<visionenv::kNObstaclesState>(
           idx * visionenv::kNObstaclesState) =
-	Vector<4>(max_detection_range_, phi, theta, r);
+          Vector<4>(max_detection_range_, max_detection_range_,
+                    max_detection_range_, obstacle_radius_[sort_idx]);
       }
+
     } else {
-      // if not enough obstacles in the environment
+      // if not enough obstacles in the environment                                                                                                                                                                                                                                                                      
       obs_state.segment<visionenv::kNObstaclesState>(
         idx * visionenv::kNObstaclesState) =
-	Vector<4>(max_detection_range_, M_PI, 0, 0);
+        Vector<visionenv::kNObstaclesState>(max_detection_range_,
+                                            max_detection_range_,
+                                            max_detection_range_, 0.0);
     }
+       
+    // if (idx < relative_pos.size()) {
+    //   Vector<3> pos = relative_pos[sort_idx];
+    //   Scalar theta = atan2(pos[1], pos[2]);
+    //   Scalar phi = obstacle_phi_[sort_idx];
+    //   Scalar d = relative_pos_norm_[sort_idx];
+    //   Scalar r = obstacle_radius_[sort_idx];
+	
+    //   // if enough obstacles in the environment
+    //   if (d <= max_detection_range_) {
+    //     // if obstacles are within detection range
+    //     obs_state.segment<visionenv::kNObstaclesState>(
+    //       idx * visionenv::kNObstaclesState) =
+    // 	Vector<4>(d, phi, theta, r);
+    //       ;
+    //   } else {
+    //     // if obstacles are beyong detection range
+    //     obs_state.segment<visionenv::kNObstaclesState>(
+    //       idx * visionenv::kNObstaclesState) =
+    // 	Vector<4>(max_detection_range_, phi, theta, r);
+    //   }
+    // } else {
+    //   // if not enough obstacles in the environment
+    //   obs_state.segment<visionenv::kNObstaclesState>(
+    //     idx * visionenv::kNObstaclesState) =
+    // 	Vector<4>(max_detection_range_, M_PI, 0, 0);
+    // }
     idx += 1;
   }
 
