@@ -115,7 +115,8 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
 
   // get N most closest obstacles as the observation
   Vector<visionenv::Cuts*visionenv::Cuts> sphericalboxel;
-  getObstacleState(sphericalboxel);
+  Vector<> unused;
+  getObstacleState(sphericalboxel, unused);
 
   // std::cout << sphericalboxel << std::endl;
 
@@ -127,7 +128,8 @@ bool VisionEnv::getObs(Ref<Vector<>> obs) {
   return true;
 }
 
-bool VisionEnv::getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel) {
+bool VisionEnv::getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel, 
+Ref<Vector<visionenv::kNObstaclesState*1>> obs_state) {
   // Scalar safty_threshold = 0.2;
   if (dynamic_objects_.size() <= 0 || static_objects_.size() <= 0) {
     logger_.error("No dynamic or static obstacles.");
@@ -197,6 +199,21 @@ bool VisionEnv::getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sp
   Matrix<3, 3> R = quad_state_.R();
   R.transposeInPlace();
 
+  for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
+    if (idx >= 1) {
+      break;
+      }
+      // if enough obstacles in the environment
+      if (idx < relative_pos.size() && relative_pos_norm_[sort_idx] <= max_detection_range_) {
+        for (size_t i = 0; i < 3; ++i){
+         obs_state[i] = relative_pos[sort_idx][i]; 
+        }
+        obs_state[3] = obstacle_radius_[sort_idx];
+      } 
+    idx += 1;
+  }
+
+  idx = 0;
   for (size_t sort_idx : sort_indexes(relative_pos_norm_)) {
     if (idx >= visionenv::kNObstacles) {
       obstacle_num = idx;

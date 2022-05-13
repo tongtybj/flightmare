@@ -73,7 +73,8 @@ class VisionEnv final : public EnvBase {
   bool getImage(Ref<ImgVector<>> img, const bool rgb = true) override;
   bool getDepthImage(Ref<DepthImgVector<>> img) override;
 
-  bool getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel);
+  bool getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel, 
+  Ref<Vector<visionenv::kNObstaclesState*1>> obs_state);
   Vector<visionenv::Cuts*visionenv::Cuts> getsphericalboxel(std::vector<Vector<3>,
   Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list);
   Scalar getClosestDistance(std::vector<Vector<3>,
