@@ -18,7 +18,7 @@ rewards:
   boundary_exp_coeff: -1.0 
   boundary_dist_margin: 0.5
   angular_vel_coeff: -0.0001
-  move_coeff: 1.0
+  move_coeff: 0.5
   survive_rew: 0.03
   collision_terminal_rew: -10.0
   bound_terminal_rew: -10.0
