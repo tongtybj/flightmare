@@ -186,6 +186,7 @@ bool UnityBridge::addQuadrotor(std::shared_ptr<Quadrotor> quad) {
     camera_t.height = rgb_cameras[cam_idx]->getHeight();
     camera_t.fov = rgb_cameras[cam_idx]->getFOV();
     camera_t.depth_scale = rgb_cameras[cam_idx]->getDepthScale();
+    std::cout << "depth scale is " << camera_t.depth_scale << std::endl;
     camera_t.enabled_layers = rgb_cameras[cam_idx]->getEnabledLayers();
     camera_t.is_depth = false;
     camera_t.output_index = cam_idx;
@@ -290,6 +291,7 @@ FrameID UnityBridge::handleOutput(const FrameID sent_frame_id) {
           // Flip image since OpenCV origin is upper left, but Unity's is
           // lower left.
           new_image = new_image * (1.f);
+          std::cout << new_image << std::endl;
           cv::flip(new_image, new_image, 0);
 
           unity_quadrotors_[idx]
