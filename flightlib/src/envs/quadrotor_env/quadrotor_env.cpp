@@ -127,7 +127,7 @@ bool QuadrotorEnv::reset(Ref<Vector<>> obs) {
     cmd_.setCmdMode(2);
     cmd_.p.setZero();
     cmd_.v.setZero();
-    cmd_.yaw = 0;
+    cmd_.yaw = 0; 
   }
 
 
