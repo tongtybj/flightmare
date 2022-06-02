@@ -69,6 +69,18 @@ class QuadrotorDynamics : DynamicsBase {
   friend std::ostream& operator<<(std::ostream& os,
                                   const QuadrotorDynamics& quad_dymaics);
 
+  // Controller
+  bool drag_compensation_;
+  Vector<3> kpacc_;
+  Vector<3> kdacc_;
+  Scalar kpatt_z_;
+  Scalar kpatt_xy_;
+  Vector<3> kprate_;
+  Vector<3> p_err_max_;
+  Vector<3> v_err_max_;
+  Scalar filter_sampling_frequency_;
+  Scalar filter_cutoff_frequency_;
+
  private:
   bool updateInertiaMarix();
   Scalar mass_;
@@ -100,6 +112,7 @@ class QuadrotorDynamics : DynamicsBase {
 
   // Quadrotor limits
   Vector<3> omega_max_;
+
 };
 
 }  // namespace flightlib

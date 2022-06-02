@@ -9,6 +9,7 @@ namespace quadcmd {
 enum CMDMODE : int {
   SINGLEROTOR = 0,
   THRUSTRATE = 1,
+  LINVEL = 2,
 };
 
 }  // namespace quadcmd
@@ -23,6 +24,7 @@ class Command {
   bool valid() const;
   bool isSingleRotorThrusts() const;
   bool isThrustRates() const;
+  bool isLinerVel() const;
 
   //
   void setZeros(void);
@@ -40,6 +42,15 @@ class Command {
 
   /// Bodyrates in [rad/s]
   Vector<3> omega;
+
+  /// goal position p
+  Vector<3> p;
+
+  /// goal velocity v
+  Vector<3> v;
+
+  Scalar yaw;
+
 
   ///
   int cmd_mode;

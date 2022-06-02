@@ -34,7 +34,12 @@ Quadrotor::Quadrotor(const QuadrotorDynamics &dynamics)
 
 Quadrotor::~Quadrotor() {}
 
-bool Quadrotor::run(const Command &cmd, const Scalar ctl_dt) {
+bool Quadrotor::run(Command &cmd, const Scalar ctl_dt) {
+  // change LINVEL cmd -> THRUSTRATE cmd
+  if(cmd.isLinerVel()){
+  getTHRUSTRATEfromLINVEL(state_,
+                          cmd);
+  }
   if (!setCommand(cmd)) {
     logger_.error("Cannot Set Control Command");
     return false;
@@ -52,7 +57,7 @@ bool Quadrotor::run(const Scalar ctl_dt) {
     return false;
   };
 
-  QuadState old_state = state_;
+  QuadState old_state = state_; //QuadState type
   QuadState next_state = state_;
 
   // time
@@ -103,6 +108,109 @@ bool Quadrotor::run(const Scalar ctl_dt) {
   return true;
 }
 
+bool Quadrotor::getTHRUSTRATEfromLINVEL(const QuadState& state,
+                                        Command& cmd) {
+  // if (setpoints == nullptr) return false;
+  // setpoints->clear();
+
+  if (!state.valid()) {
+    // logger_.error("Control inputs are not valid!");
+    std::cout << "State is invalid" << std::endl;
+    // logger_.error("Setpoints are empty: [%d]!", references.empty());
+    // logger_.error("Setpoint is valid: [%d]!", references.front().input.valid());
+    // logger_ << references.front().input;
+    return false;
+  } 
+  // There is function "valid" in class 
+
+  // acc command
+  Vector<3> acc_cmd;
+  {
+    // Vector<3> pos_error = clip(cmd.p - state.p, params_->p_err_max_);
+    Vector<3> pos_error = cmd.p - state.p; //eliminate clipping
+    //setpoint.state.p comes from action 
+    //if I want to reduce action dimention, transplant navigation system in ROS sim to this sim
+    Vector<3> vel_error = clip(cmd.v - state.v, dynamics_.v_err_max_);
+
+    Vector<3> acc_setpoint = {0,0,0}; //set 0
+
+    acc_cmd = dynamics_.kpacc_.cwiseProduct(pos_error) +
+              dynamics_.kdacc_.cwiseProduct(vel_error) + acc_setpoint -
+              GVEC;
+    // 
+    
+    // if (params_->drag_compensation_ && state.v.norm() > 3.0) {
+    //   const Vector<3> acc_aero =
+    //     state.q() * (thrust_f * Vector<3>::UnitZ() / quad_.m_ - acc_f);
+    //   acc_cmd += acc_aero;
+    // }
+  }
+  const Scalar thrust_cmd = acc_cmd.norm() * dynamics_.getMass();
+
+  // attitude command
+  Quaternion q_cmd;
+  {
+    const Quaternion q_c(Quaternion(
+      Eigen::AngleAxis<Scalar>(cmd.yaw, Vector<3>::UnitZ())));
+    const Vector<3> y_c = q_c * Vector<3>::UnitY();
+    const Vector<3> z_B = acc_cmd.normalized(); //normalized z direction vector
+    const Vector<3> x_B = (y_c.cross(z_B)).normalized(); //normalized vector
+    const Vector<3> y_B = (z_B.cross(x_B)).normalized();
+    const Matrix<3, 3> R_W_B((Matrix<3, 3>() << x_B, y_B, z_B).finished());
+    const Quaternion q_des(R_W_B);
+
+    q_cmd = q_des; //desired quaternion by cmd.yaw and acc_cmd
+  }
+
+  // angular acceleration command
+  // Vector<3> alpha_cmd;
+  Vector<3> omega_cmd;
+  {
+    omega_cmd = tiltPrioritizedControl(state.q(), q_cmd);
+
+    // // angular rate / acceleration reference from Mellinger 2011
+    // // calc tau
+    // const Vector<3> bx = state.q() * Vector<3>::UnitX();
+    // const Vector<3> by = state.q() * Vector<3>::UnitY();
+    // const Vector<3> bz = state.q() * Vector<3>::UnitZ();
+    // Vector<3> hw =
+    //   dynamics_.getMass() * (setpoint.state.j - bz.dot(setpoint.state.j) * bz);
+    // if (thrust_f >= 0.01) hw /= thrust_f;
+    // const Vector<3> w_ref =
+    //   Vector<3>(-hw.dot(by), hw.dot(bx), setpoint.state.w(2));
+
+    // alpha_cmd = omega_cmd + params_->kp_rate_.cwiseProduct(w_ref - state.w);
+  }
+
+  // QuadState state_cmd = state;
+  // state_cmd.tau = alpha_cmd; //I cannot image how it works...
+  // Command command;
+  cmd.t = state.t;
+  cmd.omega = omega_cmd;
+  cmd.collective_thrust = thrust_cmd / dynamics_.getMass();
+  //be careful cmd.cmd_mode stays "2"
+  // setpoints->push_back({state_cmd, command});
+
+  return true;
+}
+
+Vector<3> Quadrotor::tiltPrioritizedControl(const Quaternion& q,
+                                                      const Quaternion& q_des) {
+  // Attitude control method from Fohn 2020.
+  const Quaternion q_e = q.inverse() * q_des;
+
+  Matrix<3, 3> T_att = (Matrix<3, 3>() << dynamics_.kpatt_xy_, 0.0, 0.0, 0.0,
+                        dynamics_.kpatt_xy_, 0.0, 0.0, 0.0, dynamics_.kpatt_z_)
+                         .finished();
+  Vector<3> tmp = Vector<3>(q_e.w() * q_e.x() - q_e.y() * q_e.z(),
+                            q_e.w() * q_e.y() + q_e.x() * q_e.z(), q_e.z());
+  if (q_e.w() <= 0) tmp(2) *= -1.0;
+  const Vector<3> rate_cmd =
+    2.0 / std::sqrt(q_e.w() * q_e.w() + q_e.z() * q_e.z()) * T_att * tmp;
+
+  return rate_cmd;
+}
+
 void Quadrotor::init() {
   // reset
   updateDynamics(dynamics_);
@@ -140,7 +248,7 @@ void Quadrotor::runMotors(const Scalar sim_dt,
 }
 
 bool Quadrotor::setCommand(const Command &cmd) {
-  if (!cmd.valid()) {
+  if (!cmd.valid()) { // checked as "quadcmd::LINVEL" we cannot check whether 
     logger_.error("Not Valid action");
     return false;
   }
@@ -154,6 +262,8 @@ bool Quadrotor::setCommand(const Command &cmd) {
 
   if (cmd_.thrusts.allFinite())
     cmd_.thrusts = dynamics_.clampThrust(cmd_.thrusts);
+
+  
 
   return true;
 }
@@ -281,5 +391,9 @@ bool Quadrotor::getCamera(const size_t cam_id,
 bool Quadrotor::getCollision() const { return collision_; }
 
 int Quadrotor::getNumCamera() const { return rgb_cameras_.size(); }
+
+Vector<> Quadrotor::clip(const Vector<>& v, const Vector<>& bound) {
+  return v.cwiseMin(bound).cwiseMax(-bound);
+}
 
 }  // namespace flightlib

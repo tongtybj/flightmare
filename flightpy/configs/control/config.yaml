@@ -8,7 +8,7 @@ simulation:
   max_t: 5.0
   num_envs: 100
   num_threads: 10
-  rotor_ctrl: 1 # 0 single rotor, 1 body rate
+  rotor_ctrl: 2 # 0 single rotor, 1 body rate (defines action space)
 
 quadrotor_dynamics:
   mass: 0.752
@@ -57,3 +57,15 @@ rgb_camera:
   enable_depth: yes 
   enable_segmentation: no
   enable_opticalflow: no
+
+Control:
+  drag_compensation:            false
+  kpacc:                        [10.0,  10.0, 20.0]
+  kdacc:                        [ 4.0,   4.0,  6.0]
+  kpatt_z:                      2
+  kpatt_xy:                     10
+  kprate:                       [0.0, 0.0, 0.0]
+  p_err_max:                    [0.6, 0.6, 0.3]
+  v_err_max:                    [1.0, 1.0, 1.0]
+  filter_sampling_frequency:     300   # filter frequency, same as control frequency (Hz)
+  filter_cutoff_frequency:       6    # outer loop filter cut-off frequency (Hz)

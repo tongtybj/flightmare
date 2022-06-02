@@ -31,7 +31,7 @@ void QuadrotorEnv::init() {
   //
   goal_pos_ << 0.0, 0.0, 5.0;
   //
-  quad_ptr_ = std::make_shared<Quadrotor>();
+  quad_ptr_ = std::make_shared<Quadrotor>(); //geo_params.cppを移植
   // update dynamics
   QuadrotorDynamics dynamics;
   dynamics.updateParams(cfg_);
@@ -81,6 +81,9 @@ void QuadrotorEnv::init() {
     act_mean_ << (max_force / quad_ptr_->getMass()) / 2, 0.0, 0.0, 0.0;
     act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
       max_omega.y(), max_omega.z();
+  } else if (rotor_ctrl_ == 2){
+    act_mean_ << 35, 0, 5, 0, 0, 0, 0;
+    act_std_ << 35, 10, 5 , 10, 3, 3, 1; //set by my experience
   }
 }
 
@@ -120,7 +123,13 @@ bool QuadrotorEnv::reset(Ref<Vector<>> obs) {
     cmd_.setCmdMode(1);
     cmd_.collective_thrust = 0;
     cmd_.omega.setZero();
+  } else if (rotor_ctrl_ == 2) {
+    cmd_.setCmdMode(2);
+    cmd_.p.setZero();
+    cmd_.v.setZero();
+    cmd_.yaw = 0;
   }
+
 
   // obtain observations
   getObs(obs);
@@ -162,12 +171,18 @@ bool QuadrotorEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
   cmd_.t += sim_dt_;
   quad_state_.t += sim_dt_;
 
+  // comment out due to compile error of type difference from cmd, and pi_act
+
   if (rotor_ctrl_ == 0) {
-    cmd_.thrusts = pi_act_;
+    cmd_.thrusts = pi_act_.segment<4>(0);
   } else if (rotor_ctrl_ == 1) {
     cmd_.collective_thrust = pi_act_(0);
     cmd_.omega = pi_act_.segment<3>(1);
-  }
+  } else if (rotor_ctrl_ == 2) {
+    cmd_.p = pi_act_.segment<3>(0);
+    cmd_.v = pi_act_.segment<3>(3);
+    cmd_.yaw = pi_act_(6);
+  } 
 
   // simulate quadrotor
   quad_ptr_->run(cmd_, sim_dt_);
@@ -279,7 +294,8 @@ bool QuadrotorEnv::loadParam(const YAML::Node &cfg) {
   if (cfg["simulation"]) {
     sim_dt_ = cfg["simulation"]["sim_dt"].as<Scalar>();
     max_t_ = cfg["simulation"]["max_t"].as<Scalar>();
-    rotor_ctrl_ = cfg["simulation"]["rotor_ctrl"].as<int>();
+    rotor_ctrl_ = cfg["simulation"]["rotor_ctrl"].as<int>(); 
+    //defined here ("/flightpy/configs/control/config.yaml")
   } else {
     logger_.error("Cannot load [quadrotor_env] parameters");
     return false;

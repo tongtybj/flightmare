@@ -34,7 +34,7 @@ enum Ctl : int {
 
   // control actions
   kAct = 0,
-  kNAct = 4
+  kNAct = 7
 };
 }  // namespace quadenv
 

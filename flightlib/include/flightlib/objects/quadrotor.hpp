@@ -20,7 +20,8 @@ namespace flightlib {
 class Quadrotor : ObjectBase {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Quadrotor(const QuadrotorDynamics& dynamics = QuadrotorDynamics(1.0));
+  Quadrotor(const QuadrotorDynamics& dynamics = QuadrotorDynamics(1.0)); 
+  //default arguments by 
   Quadrotor(const std::string& cfg_path);
   ~Quadrotor();
 
@@ -31,7 +32,12 @@ class Quadrotor : ObjectBase {
 
   // run the quadrotor
   bool run(const Scalar dt) override;
-  bool run(const Command& cmd, const Scalar dt);
+  bool run(Command& cmd, const Scalar dt);
+
+
+  bool getTHRUSTRATEfromLINVEL(const QuadState& state, Command& cmd);
+    Vector<3> tiltPrioritizedControl(const Quaternion& q,
+                                   const Quaternion& q_des);
 
   // public get functions
   bool getState(QuadState* const state) const;
@@ -49,6 +55,7 @@ class Quadrotor : ObjectBase {
   bool getCamera(const size_t cam_id, std::shared_ptr<RGBCamera> camera) const;
   int getNumCamera() const;
   bool getCollision() const;
+  Vector<> clip(const Vector<>& v, const Vector<>& bound);
 
   // public set functions
   bool setState(const QuadState& state);
