@@ -50,6 +50,7 @@ bool VisionVecEnv<EnvBaseName>::reset(Ref<MatrixRowMajor<>> obs) {
 
 template<typename EnvBaseName>
 bool VisionVecEnv<EnvBaseName>::reset(Ref<MatrixRowMajor<>> obs, bool random) {
+  // std::cout << "reset is called" << std::endl;
   if (obs.rows() != this->num_envs_ || obs.cols() != this->obs_dim_) {
     this->logger_.error(
       "Input matrix dimensions do not match with that of the environment.");
@@ -57,6 +58,7 @@ bool VisionVecEnv<EnvBaseName>::reset(Ref<MatrixRowMajor<>> obs, bool random) {
   }
   random_reset_ = random;
 
+  // std::cout << "reset call in VisionVecEnv" << std::endl;
 
   this->receive_id_ = 0;
   for (int i = 0; i < this->num_envs_; i++) {

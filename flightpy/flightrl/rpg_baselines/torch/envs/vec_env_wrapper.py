@@ -155,6 +155,7 @@ class FlightEnvVec(VecEnv):
         self._reward_components = np.zeros(
             [self.num_envs, self.rew_dim], dtype=np.float64
         )
+        # print("calling reset")
         self.wrapper.reset(self._observation, random)
         obs = self._observation
         #

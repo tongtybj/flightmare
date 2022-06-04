@@ -40,11 +40,13 @@ void VecEnvBase<EnvBaseName>::configEnv(const YAML::Node& cfg_node) {
   for (int env_id = 0; env_id < num_envs_; env_id++) {
     envs_.push_back(std::make_unique<EnvBaseName>(cfg_node, env_id));
   }
-
+  // std::cout << "creating envirionment" << std::endl;
   // set Unity
   if (unity_render_) {
     setUnity(unity_render_);
   }
+
+  // std::cout << "finish setting unity" << std::endl;
 
   obs_dim_ = envs_[0]->getObsDim();
   act_dim_ = envs_[0]->getActDim();
