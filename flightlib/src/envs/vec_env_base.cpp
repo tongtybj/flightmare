@@ -5,7 +5,9 @@ namespace flightlib {
 template<typename EnvBaseName>
 VecEnvBase<EnvBaseName>::VecEnvBase() {
   omp_set_num_threads(10);
-}
+}  // std::cout << "cmd_.p is " << cmd_.p << std::endl;
+   // std::cout << "cmd_.v is " << cmd_.v << std::endl;
+   // std::cout << "cmd_.yaw is " << cmd_.yaw << std::endl;
 
 template<typename EnvBaseName>
 void VecEnvBase<EnvBaseName>::configEnv(const YAML::Node& cfg_node) {

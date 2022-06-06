@@ -36,13 +36,23 @@ Quadrotor::~Quadrotor() {}
 
 bool Quadrotor::run(Command &cmd, const Scalar ctl_dt) {
   // change LINVEL cmd -> THRUSTRATE cmd
+  // std::cout << "cmd.p is " << cmd.p << std::endl;
+  // std::cout << "cmd.v is " << cmd.v << std::endl;
+  // std::cout << "cmd.yaw is " << cmd.yaw << std::endl;
+  // std::cout << "cmd.isLinerVel is " << cmd.isLinerVel() << std::endl;
+
   if (cmd.isLinerVel()) {
     getTHRUSTRATEfromLINVEL(state_, cmd);
+    // std::cout << "cmd.collective_thrust is " << cmd.collective_thrust
+    //           << std::endl;
+    // std::cout << "cmd.omega is " << cmd.omega << std::endl;
   }
   if (!setCommand(cmd)) {
     logger_.error("Cannot Set Control Command");
     return false;
   };
+  // std::cout << cmd_.collective_thrust << std::endl;
+  // std::cout << cmd_.omega << std::endl;
   return run(ctl_dt);
 }
 

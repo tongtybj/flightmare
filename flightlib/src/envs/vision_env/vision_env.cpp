@@ -63,12 +63,15 @@ void VisionEnv::init() {
   changeLevel();
 
   // use single rotor control or bodyrate control
-  Scalar max_force = quad_ptr_->getDynamics().getForceMax();
-  Vector<3> max_omega = quad_ptr_->getDynamics().getOmegaMax();
+  // Scalar max_force = quad_ptr_->getDynamics().getForceMax();
+  // Vector<3> max_omega = quad_ptr_->getDynamics().getOmegaMax();
   //
-  act_mean_ << (max_force / quad_ptr_->getMass()) / 2, 0.0, 0.0, 0.0;
-  act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
-    max_omega.y(), max_omega.z();
+  // act_mean_ << (max_force / quad_ptr_->getMass()) / 2, 0.0, 0.0, 0.0;
+  // act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
+  //   max_omega.y(), max_omega.z();
+
+  act_mean_ << 0, 0, 0, 0, 0, 0, 0;
+  act_std_ << 1, 1, 2, 1, 1, 1, 1;  // set by my experience
 }
 
 VisionEnv::~VisionEnv() {}
@@ -82,9 +85,14 @@ bool VisionEnv::reset(Ref<Vector<>> obs) {
 
   // randomly reset the quadrotor state
   // reset position
-  quad_state_.x(QS::POSX) = uniform_dist_(random_gen_);
-  quad_state_.x(QS::POSY) = uniform_dist_(random_gen_) * 9.0;
-  quad_state_.x(QS::POSZ) = uniform_dist_(random_gen_) * 4 + 5.0;
+  // quad_state_.x(QS::POSX) = uniform_dist_(random_gen_);
+  // quad_state_.x(QS::POSY) = uniform_dist_(random_gen_) * 9.0;
+  // quad_state_.x(QS::POSZ) = uniform_dist_(random_gen_) * 4 + 5.0;
+
+  quad_state_.x(QS::POSX) = 0;
+  quad_state_.x(QS::POSY) = 0;
+  quad_state_.x(QS::POSZ) = 1;
+  // set initial position is fixed
 
   // reset quadrotor with random states
   quad_ptr_->reset(quad_state_);
@@ -356,8 +364,12 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
   quad_state_.t += sim_dt_;
 
   // apply old actions to simulate delay
-  cmd_.collective_thrust = old_pi_act_(0);
-  cmd_.omega = old_pi_act_.segment<3>(1);
+  // cmd_.collective_thrust = old_pi_act_(0);
+  // cmd_.omega = old_pi_act_.segment<3>(1);
+
+  cmd_.p = pi_act_.segment<3>(0);
+  cmd_.v = pi_act_.segment<3>(3);
+  cmd_.yaw = pi_act_(6);
 
   // simulate quadrotor
   quad_ptr_->run(cmd_, sim_dt_);
