@@ -70,8 +70,8 @@ void VisionEnv::init() {
   // act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
   //   max_omega.y(), max_omega.z();
 
-  act_mean_ << 0, 0, 0, 0, 0, 0, 0;
-  act_std_ << 1, 1, 2, 1, 1, 1, 1;  // set by my experience
+  act_mean_ << 35, 0, 5, 1, 0, 0, 0;
+  act_std_ << 35, 10, 5, 1, 1, 1, 1;  // set by my experience
 }
 
 VisionEnv::~VisionEnv() {}
@@ -92,7 +92,7 @@ bool VisionEnv::reset(Ref<Vector<>> obs) {
   quad_state_.x(QS::POSX) = 0;
   quad_state_.x(QS::POSY) = 0;
   quad_state_.x(QS::POSZ) = 1;
-  // set initial position is fixed
+  // // set initial position is fixed
 
   // reset quadrotor with random states
   quad_ptr_->reset(quad_state_);
@@ -377,9 +377,9 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
   // update quadrotor state and old quad_state
   quad_old_state_ = quad_state_;
   quad_ptr_->getState(&quad_state_);
-  std::cout << "x is " << quad_state_.p(quad_state_.IDX::POSX) << std::endl;
-  std::cout << "y is " << quad_state_.p(quad_state_.IDX::POSY) << std::endl;
-  std::cout << "z is " << quad_state_.p(quad_state_.IDX::POSZ) << std::endl;
+  // std::cout << "x is " << quad_state_.p(quad_state_.IDX::POSX) << std::endl;
+  // std::cout << "y is " << quad_state_.p(quad_state_.IDX::POSY) << std::endl;
+  // std::cout << "z is " << quad_state_.p(quad_state_.IDX::POSZ) << std::endl;
 
   // simulate dynamic obstacles
   simDynamicObstacles(sim_dt_);
@@ -742,8 +742,12 @@ bool VisionEnv::configStaticObjects(const std::string &csv_file) {
   std::ifstream infile(csv_file);
   int i = 0;
   for (auto &row : CSVRange(infile)) {
+    // std::cout << row[0] << std::endl; // object_id, and 10 obs's data
+    // std::cout << "RowType: " << typeid(row).name() << std::endl;
+
     // Read column 0 for time
     std::string object_id = "StaticObject" + std::to_string(i + 1);
+    // std::cout << object_id << std::endl;
     std::string prefab_id = (std::string)row[0];
 
     //
