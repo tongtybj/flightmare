@@ -377,6 +377,9 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
   // update quadrotor state and old quad_state
   quad_old_state_ = quad_state_;
   quad_ptr_->getState(&quad_state_);
+  std::cout << "x is " << quad_state_.p(quad_state_.IDX::POSX) << std::endl;
+  std::cout << "y is " << quad_state_.p(quad_state_.IDX::POSY) << std::endl;
+  std::cout << "z is " << quad_state_.p(quad_state_.IDX::POSZ) << std::endl;
 
   // simulate dynamic obstacles
   simDynamicObstacles(sim_dt_);

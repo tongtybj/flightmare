@@ -36,16 +36,16 @@ Quadrotor::~Quadrotor() {}
 
 bool Quadrotor::run(Command &cmd, const Scalar ctl_dt) {
   // change LINVEL cmd -> THRUSTRATE cmd
-  // std::cout << "cmd.p is " << cmd.p << std::endl;
-  // std::cout << "cmd.v is " << cmd.v << std::endl;
-  // std::cout << "cmd.yaw is " << cmd.yaw << std::endl;
-  // std::cout << "cmd.isLinerVel is " << cmd.isLinerVel() << std::endl;
+  std::cout << "cmd.p is " << cmd.p << std::endl;
+  std::cout << "cmd.v is " << cmd.v << std::endl;
+  std::cout << "cmd.yaw is " << cmd.yaw << std::endl;
+  std::cout << "cmd.isLinerVel is " << cmd.isLinerVel() << std::endl;
 
   if (cmd.isLinerVel()) {
     getTHRUSTRATEfromLINVEL(state_, cmd);
-    // std::cout << "cmd.collective_thrust is " << cmd.collective_thrust
-    //           << std::endl;
-    // std::cout << "cmd.omega is " << cmd.omega << std::endl;
+    std::cout << "cmd.collective_thrust is " << cmd.collective_thrust
+              << std::endl;
+    std::cout << "cmd.omega is " << cmd.omega << std::endl;
   }
   if (!setCommand(cmd)) {
     logger_.error("Cannot Set Control Command");
@@ -145,6 +145,9 @@ bool Quadrotor::getTHRUSTRATEfromLINVEL(const QuadState &state, Command &cmd) {
 
     acc_cmd = dynamics_.kpacc_.cwiseProduct(pos_error) +
               dynamics_.kdacc_.cwiseProduct(vel_error) + acc_setpoint - GVEC;
+    std::cout << "acc_cmd: " << acc_cmd << std::endl;
+    if (acc_cmd[2] < 1) acc_cmd[2] = 1;  // if 0, then unstable in z_B
+    std::cout << "acc_cmd: " << acc_cmd << std::endl;
     //
 
     // if (params_->drag_compensation_ && state.v.norm() > 3.0) {
@@ -160,11 +163,18 @@ bool Quadrotor::getTHRUSTRATEfromLINVEL(const QuadState &state, Command &cmd) {
   {
     const Quaternion q_c(
       Quaternion(Eigen::AngleAxis<Scalar>(cmd.yaw, Vector<3>::UnitZ())));
+    // std::cout << "q_c: " << q_c.w() << "," << q_c.x() << "," << q_c.y() <<
+    // ","
+    //           << q_c.z() << std::endl;
     const Vector<3> y_c = q_c * Vector<3>::UnitY();
+    // std::cout << "y_c: " << y_c << std::endl;
     const Vector<3> z_B = acc_cmd.normalized();  // normalized z direction
                                                  // vector
+    std::cout << "z_B: " << z_B << std::endl;
     const Vector<3> x_B = (y_c.cross(z_B)).normalized();  // normalized vector
+    // std::cout << "x_B: " << x_B << std::endl;
     const Vector<3> y_B = (z_B.cross(x_B)).normalized();
+    // std::cout << "y_B: " << y_B << std::endl;
     const Matrix<3, 3> R_W_B((Matrix<3, 3>() << x_B, y_B, z_B).finished());
     const Quaternion q_des(R_W_B);
 
@@ -175,6 +185,11 @@ bool Quadrotor::getTHRUSTRATEfromLINVEL(const QuadState &state, Command &cmd) {
   // Vector<3> alpha_cmd;
   Vector<3> omega_cmd;
   {
+    // std::cout << "state.q(): " << state.q().w() << "," << state.q().x() <<
+    // ","
+    //           << state.q().y() << "," << state.q().z() << std::endl;
+    std::cout << "q_cmd: " << q_cmd.w() << "," << q_cmd.x() << "," << q_cmd.y()
+              << "," << q_cmd.z() << std::endl;
     omega_cmd = tiltPrioritizedControl(state.q(), q_cmd);
 
     // // angular rate / acceleration reference from Mellinger 2011
