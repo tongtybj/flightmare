@@ -73,6 +73,7 @@ struct QuadState {
   Quaternion q() const;
   void q(const Quaternion quaternion);
   Matrix<3, 3> R() const;
+  Vector<3> Euler() const;
 
   void setZero();
   inline bool valid() const { return x.allFinite() && std::isfinite(t); }

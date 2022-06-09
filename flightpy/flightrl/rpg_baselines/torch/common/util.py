@@ -114,7 +114,7 @@ def test_policy(env, model, render=False):
         while not (done or (ep_len >= max_ep_length)):
             # print(obs)
             act, _ = model.predict(obs, deterministic=True)
-            print(act)
+            # print(act)
             obs, rew, done, info = env.step(act)
             #
             env.render(ep_len)

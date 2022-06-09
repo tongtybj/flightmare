@@ -25,6 +25,12 @@ Matrix<3, 3> QuadState::R() const {
   return Quaternion(x(ATTW), x(ATTX), x(ATTY), x(ATTZ)).toRotationMatrix();
 }
 
+Vector<3> QuadState::Euler() const {
+  return Quaternion(x(ATTW), x(ATTX), x(ATTY), x(ATTZ))
+    .toRotationMatrix()
+    .eulerAngles(0, 1, 2);
+}
+
 void QuadState::setZero() {
   t = 0.0;
   x.setZero();

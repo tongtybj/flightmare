@@ -12,7 +12,6 @@
 
 // random choice of level and env
 #include <random>
-
 #include <typeinfo>
 
 // flightlib
@@ -43,7 +42,7 @@ enum Vision : int {
 
   // observations
   kObs = 0,
-  kNObs = 3+9+3+3+4+3 + Cuts*Cuts,
+  kNObs = 3 + 9 + 3 + 3 + 4 + 3 + Cuts * Cuts,
 
   // control actions
   kAct = 0,
@@ -73,16 +72,19 @@ class VisionEnv final : public EnvBase {
   bool getImage(Ref<ImgVector<>> img, const bool rgb = true) override;
   bool getDepthImage(Ref<DepthImgVector<>> img) override;
 
-  bool getObstacleState(Ref<Vector<visionenv::Cuts*visionenv::Cuts>> sphericalboxel, 
-  Ref<Vector<visionenv::kNObstaclesState*1>> obs_state);
-  Vector<visionenv::Cuts*visionenv::Cuts> getsphericalboxel(std::vector<Vector<3>,
-  Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list);
-  Scalar getClosestDistance(std::vector<Vector<3>,
-  Eigen::aligned_allocator<Vector<3>>>& pos_b_list, std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list, 
-  Scalar tcell, Scalar fcell);
+  bool getObstacleState(
+    Ref<Vector<visionenv::Cuts * visionenv::Cuts>> sphericalboxel,
+    Ref<Vector<visionenv::kNObstaclesState * 1>> obs_state);
+  Vector<visionenv::Cuts * visionenv::Cuts> getsphericalboxel(
+    std::vector<Vector<3>, Eigen::aligned_allocator<Vector<3>>> &pos_b_list,
+    std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list);
+  Scalar getClosestDistance(
+    std::vector<Vector<3>, Eigen::aligned_allocator<Vector<3>>> &pos_b_list,
+    std::vector<Scalar> pos_norm_list, std::vector<Scalar> obs_radius_list,
+    Scalar tcell, Scalar fcell);
   Vector<3> getCartesianFromAng(Scalar t, Scalar f);
   Scalar inner_product(Vector<3> a, Vector<3> b);
-  void comp(Scalar& rmin, Scalar r);
+  void comp(Scalar &rmin, Scalar r);
   Scalar getclosestpoint(Scalar distance, Scalar theta, Scalar size);
 
   // get quadrotor states
@@ -144,8 +146,11 @@ class VisionEnv final : public EnvBase {
   Logger logger_{"VisionEnv"};
 
   // Define reward for training
-  Scalar move_coeff_, vel_coeff_, collision_coeff_,collision_exp_coeff_, angular_vel_coeff_, survive_rew_, dist_margin;
+  Scalar move_coeff_, vel_coeff_, collision_coeff_, collision_exp_coeff_,
+    angular_vel_coeff_, survive_rew_, dist_margin;
   std::vector<Scalar> world_box_coeff_;
+  std::vector<Scalar> attitude_coeff_;
+  std::vector<Scalar> command_coeff_;
   Vector<3> goal_linear_vel_;
   bool is_collision_;
 
@@ -200,6 +205,12 @@ class VisionEnv final : public EnvBase {
   std::string obstacle_cfg_path_;
   int num_dynamic_objects_;
   int num_static_objects_;
+
+  int collide_num;
+  int time_num;
+  int bound_num;
+  int goal_num;
+  int iter;
 };
 
 }  // namespace flightlib

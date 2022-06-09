@@ -72,6 +72,12 @@ void VisionEnv::init() {
 
   act_mean_ << 35, 0, 5, 1, 0, 0, 0;
   act_std_ << 35, 10, 5, 1, 1, 1, 1;  // set by my experience
+
+  collide_num = 0;
+  time_num = 0;
+  bound_num = 0;
+  goal_num = 0;
+  iter = 0;
 }
 
 VisionEnv::~VisionEnv() {}
@@ -449,34 +455,31 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     world_box_coeff_[1] *
       std::pow(quad_state_.x(QS::POSZ) - world_box_center_[1], 2);
 
+  Vector<3> euler = quad_state_.Euler();
+  Scalar attitude_penalty = attitude_coeff_[0] * std::pow(euler[0], 2) +
+                            attitude_coeff_[1] * std::pow(euler[1], 2);
+
+  Scalar command_penalty = 0;
+  Vector<visionenv::kNAct> pi_act_diff_ = pi_act_ - old_pi_act_;
+  for (int i = 0; i < 7; i++) {
+    command_penalty += command_coeff_[i] * std::pow(pi_act_diff_[i], 2);
+  }
+
   //  change progress reward as survive reward
-  const Scalar total_reward = move_reward + lin_vel_reward + collision_penalty +
-                              ang_vel_penalty + survive_rew_ +
-                              world_box_penalty;
+  const Scalar total_reward =
+    move_reward + lin_vel_reward + collision_penalty + ang_vel_penalty +
+    survive_rew_ + world_box_penalty + attitude_penalty + command_penalty;
 
   // return all reward components for debug purposes
   // only the total reward is used by the RL algorithm
   reward << move_reward, lin_vel_reward, collision_penalty, ang_vel_penalty,
-    survive_rew_, world_box_penalty, total_reward;
+    survive_rew_, world_box_penalty, attitude_penalty, command_penalty,
+    total_reward;
   return true;
 }
 
+
 bool VisionEnv::isTerminalState(Scalar &reward) {
-  if (is_collision_) {
-    reward = fabs(quad_state_.x(QS::VELX)) * -10.0;
-    // std::cout << "terminate by collision" << std::endl;
-    return true;
-  }
-
-  // simulation time out
-  if (cmd_.t >= max_t_ - sim_dt_) {
-    reward = -1;
-    // std::cout << "terminate by time" << std::endl;
-    return true;
-  }
-
-  // world boundling box check
-  // - x, y, and z
   const Scalar safty_threshold = 0.1;
   bool x_valid = quad_state_.p(QS::POSX) >= world_box_[0] + safty_threshold &&
                  quad_state_.p(QS::POSX) <= world_box_[1] - safty_threshold;
@@ -484,23 +487,52 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
                  quad_state_.p(QS::POSY) <= world_box_[3] - safty_threshold;
   bool z_valid = quad_state_.x(QS::POSZ) >= world_box_[4] + safty_threshold &&
                  quad_state_.x(QS::POSZ) <= world_box_[5] - safty_threshold;
-  if (!x_valid || !y_valid || !z_valid) {
-    reward = -5;
-    if (!x_valid) {
-      // std::cout << "terminate by x boundary" << std::endl;
-    }
-    if (!y_valid) {
-      // std::cout << "terminate by y boundary" << std::endl;
-    }
-    if (!z_valid) {
-      // std::cout << "terminate by z boundary" << std::endl;
-    }
-    return true;
-  }
 
-  if (quad_state_.p(QS::POSX) > goal_) {
-    reward = 50 * move_coeff_;
-    // std::cout << "terminate by reaching the goal" << std::endl;
+  if (is_collision_ || cmd_.t >= max_t_ - sim_dt_ || !x_valid || !y_valid ||
+      !z_valid || quad_state_.p(QS::POSX) > goal_) {
+    if (is_collision_) {
+      reward = fabs(quad_state_.x(QS::VELX)) * -10.0;
+      // std::cout << "terminate by collision" << std::endl;
+      // return true;
+      // std::cout << "t is " << cmd_.t << std::endl;
+      if (cmd_.t == sim_dt_) {
+        return true;
+      }
+      collide_num += 1;
+    }
+
+    // simulation time out
+    if (cmd_.t >= max_t_ - sim_dt_) {
+      reward = -1;
+      // std::cout << "terminate by time" << std::endl;
+      // return true;
+      time_num += 1;
+    }
+
+    // world boundling box check
+    // - x, y, and z
+    if (!x_valid || !y_valid || !z_valid) {
+      reward = -5;
+      // std::cout << "terminate by box" << std::endl;
+      // return true;
+      bound_num += 1;
+    }
+
+    if (quad_state_.p(QS::POSX) > goal_) {
+      reward = 50 * move_coeff_;
+      // std::cout << "terminate by reaching the goal" << std::endl;
+      // return true;
+      goal_num += 1;
+    }
+
+    iter += 1;
+    // std::cout << "iter is " << iter << std::endl;
+    if (iter == 100) {
+      // std::cout << "collide_num is " << collide_num << std::endl;
+      // std::cout << "time_num is " << time_num << std::endl;
+      // std::cout << "bound_num is " << bound_num << std::endl;
+      // std::cout << "goal_num is " << goal_num << std::endl;
+    }
     return true;
   }
   return false;
@@ -608,6 +640,10 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
     world_box_coeff_ =
       cfg["rewards"]["world_box_coeff"].as<std::vector<Scalar>>();
+    attitude_coeff_ =
+      cfg["rewards"]["attitude_coeff"].as<std::vector<Scalar>>();
+    command_coeff_ = cfg["rewards"]["command_coeff"].as<std::vector<Scalar>>();
+
 
     // std::cout << dist_margin << std::endl;
 

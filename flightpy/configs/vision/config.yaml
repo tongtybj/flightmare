@@ -20,6 +20,9 @@ rewards:
   angular_vel_coeff: -0.0001
   survive_rew: 0.03
   world_box_coeff: [-0.0005, -0.002] # y,z
+  attitude_coeff: [-0.002, -0.002]
+  command_coeff: [-0.000025, -0.0001, -0.0001, -0.0005, -0.0005, -0.0005, -0.00025]
+
   names:
     [
       "move_reward",
@@ -28,6 +31,8 @@ rewards:
       "ang_vel_penalty",
       "survive_rew",
       "world_box_penalty",
+      "attitude_penalty",
+      "command_penalty",
       "total",
     ] #this size determines the size of rewards. (cf. vision_env.cpp l460)
 
