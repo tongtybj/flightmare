@@ -26,7 +26,7 @@ namespace quadenv {
 
 enum Ctl : int {
   //
-  kNQuadState = 25,
+  kNQuadState = 25 + 3,
 
   // observations
   kObs = 0,

@@ -243,6 +243,7 @@ bool QuadrotorEnv::getQuadAct(Ref<Vector<>> act) const {
 }
 
 bool QuadrotorEnv::getQuadState(Ref<Vector<>> obs) const {
+  // std::cout << "quadenv" << obs.rows() << quadenv::kNQuadState << std::endl;
   if (quad_state_.t >= 0.0 && (obs.rows() == quadenv::kNQuadState)) {
     obs << quad_state_.t, quad_state_.p, quad_state_.qx, quad_state_.v,
       quad_state_.w, quad_state_.a, quad_ptr_->getMotorOmega(),

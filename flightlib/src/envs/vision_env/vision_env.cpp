@@ -528,10 +528,10 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
     iter += 1;
     // std::cout << "iter is " << iter << std::endl;
     if (iter == 100) {
-      // std::cout << "collide_num is " << collide_num << std::endl;
-      // std::cout << "time_num is " << time_num << std::endl;
-      // std::cout << "bound_num is " << bound_num << std::endl;
-      // std::cout << "goal_num is " << goal_num << std::endl;
+      std::cout << "collide_num is " << collide_num << std::endl;
+      std::cout << "time_num is " << time_num << std::endl;
+      std::cout << "bound_num is " << bound_num << std::endl;
+      std::cout << "goal_num is " << goal_num << std::endl;
     }
     return true;
   }
@@ -548,9 +548,11 @@ bool VisionEnv::getQuadAct(Ref<Vector<>> act) const {
 }
 
 bool VisionEnv::getQuadState(Ref<Vector<>> obs) const {
+  // std::cout << "visionenv" << obs.rows() << visionenv::kNQuadState <<
+  // std::endl;
   if (quad_state_.t >= 0.0 && (obs.rows() == visionenv::kNQuadState)) {
-    obs << quad_state_.t, quad_state_.p, quad_state_.qx, quad_state_.v,
-      quad_state_.w, quad_state_.a, quad_ptr_->getMotorOmega(),
+    obs << quad_state_.t, quad_state_.p, quad_state_.qx, quad_state_.Euler(),
+      quad_state_.v, quad_state_.w, quad_state_.a, quad_ptr_->getMotorOmega(),
       quad_ptr_->getMotorThrusts();
     return true;
   }

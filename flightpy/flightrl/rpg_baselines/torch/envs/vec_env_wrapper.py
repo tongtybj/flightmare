@@ -61,7 +61,7 @@ class FlightEnvVec(VecEnv):
             [self.num_envs, self.rew_dim - 1], dtype=np.float64
         )
 
-        self._quadstate = np.zeros([self.num_envs, 25], dtype=np.float64)
+        self._quadstate = np.zeros([self.num_envs, 25 + 3], dtype=np.float64)
         self._quadact = np.zeros([self.num_envs, 4], dtype=np.float64)
         self._flightmodes = np.zeros([self.num_envs, 1], dtype=np.float64)
 

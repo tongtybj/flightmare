@@ -105,6 +105,11 @@ def test_policy(env, model, render=False):
     frame_id = 0
     final_x_list = []
     ave_vel_list = []
+    act_diff_sum = np.zeros(7)
+    # print(act_diff_sum.shape)
+    act = np.zeros(7)
+    past_act = np.zeros(7)
+    step_num = 0
     if render:
         env.connectUnity()
     for n_roll in range(num_rollouts):
@@ -113,9 +118,16 @@ def test_policy(env, model, render=False):
         final_t = 0
         while not (done or (ep_len >= max_ep_length)):
             # print(obs)
+            past_act = act
             act, _ = model.predict(obs, deterministic=True)
+            act = act.reshape(7)
+            # print(act.shape)
+            # print(past_act.shape)
+            # print(act_diff_sum.shape)
+            act_diff_sum += np.power(act - past_act , 2)
             # print(act)
             obs, rew, done, info = env.step(act)
+            step_num += 1
             #
             env.render(ep_len)
 
@@ -145,6 +157,13 @@ def test_policy(env, model, render=False):
             # cv2.imshow("depth", depth_img)
             # cv2.waitKey(100)
 
+            roll = env.getQuadState()[0][8]
+            pitch = env.getQuadState()[0][9]
+            yaw = env.getQuadState()[0][10]
+            # print(roll)
+            print(pitch)
+            # print(yaw)
+
 
             #
             if done:
@@ -161,8 +180,6 @@ def test_policy(env, model, render=False):
                 final_x = env.getQuadState()[0][1]
                 final_t = env.getQuadState()[0][0]
 
-
-
             ep_len += 1
             frame_id += 1
 
@@ -173,5 +190,7 @@ def test_policy(env, model, render=False):
     plt.show()
     print("average vel: {}".format(sum(ave_vel_list)/num_rollouts))
     print("standard deviation vel: {}".format(statistics.pstdev(ave_vel_list)))
+
+    print("action difference: {}".format(np.round(np.sqrt(act_diff_sum/step_num),decimals = 2)))
     if render:
         env.disconnectUnity()

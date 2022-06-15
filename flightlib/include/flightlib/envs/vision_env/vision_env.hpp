@@ -33,7 +33,7 @@ namespace visionenv {
 
 enum Vision : int {
   //
-  kNQuadState = 25,
+  kNQuadState = 25 + 3,
 
   kNObstacles = 30,
   kNObstaclesState = 4,
