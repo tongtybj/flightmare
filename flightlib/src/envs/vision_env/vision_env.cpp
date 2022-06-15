@@ -91,13 +91,13 @@ bool VisionEnv::reset(Ref<Vector<>> obs) {
 
   // randomly reset the quadrotor state
   // reset position
-  // quad_state_.x(QS::POSX) = uniform_dist_(random_gen_);
-  // quad_state_.x(QS::POSY) = uniform_dist_(random_gen_) * 9.0;
-  // quad_state_.x(QS::POSZ) = uniform_dist_(random_gen_) * 4 + 5.0;
+  quad_state_.x(QS::POSX) = uniform_dist_(random_gen_);
+  quad_state_.x(QS::POSY) = uniform_dist_(random_gen_) * 9.0;
+  quad_state_.x(QS::POSZ) = uniform_dist_(random_gen_) * 4 + 5.0;
 
-  quad_state_.x(QS::POSX) = 0;
-  quad_state_.x(QS::POSY) = 0;
-  quad_state_.x(QS::POSZ) = 1;
+  // quad_state_.x(QS::POSX) = 0;
+  // quad_state_.x(QS::POSY) = 0;
+  // quad_state_.x(QS::POSZ) = 1;
   // // set initial position is fixed
 
   // reset quadrotor with random states
@@ -455,9 +455,8 @@ bool VisionEnv::computeReward(Ref<Vector<>> reward) {
     world_box_coeff_[1] *
       std::pow(quad_state_.x(QS::POSZ) - world_box_center_[1], 2);
 
-  Vector<3> euler = quad_state_.Euler();
-  Scalar attitude_penalty = attitude_coeff_[0] * std::pow(euler[0], 2) +
-                            attitude_coeff_[1] * std::pow(euler[1], 2);
+  Scalar tilt = quad_state_.Horizontal_Tilt();
+  Scalar attitude_penalty = attitude_coeff_ * std::pow(tilt, 2);
 
   Scalar command_penalty = 0;
   Vector<visionenv::kNAct> pi_act_diff_ = pi_act_ - old_pi_act_;
@@ -494,8 +493,10 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
       reward = fabs(quad_state_.x(QS::VELX)) * -10.0;
       // std::cout << "terminate by collision" << std::endl;
       // return true;
-      // std::cout << "t is " << cmd_.t << std::endl;
-      if (cmd_.t == sim_dt_) {
+      // std::cout << "t is " << cmd_.t << std::endl;]
+      Scalar init_t = 0;
+      if (cmd_.t == init_t) {
+        // std::cout << "initial state" << std::endl;
         return true;
       }
       collide_num += 1;
@@ -551,9 +552,9 @@ bool VisionEnv::getQuadState(Ref<Vector<>> obs) const {
   // std::cout << "visionenv" << obs.rows() << visionenv::kNQuadState <<
   // std::endl;
   if (quad_state_.t >= 0.0 && (obs.rows() == visionenv::kNQuadState)) {
-    obs << quad_state_.t, quad_state_.p, quad_state_.qx, quad_state_.Euler(),
-      quad_state_.v, quad_state_.w, quad_state_.a, quad_ptr_->getMotorOmega(),
-      quad_ptr_->getMotorThrusts();
+    obs << quad_state_.t, quad_state_.p, quad_state_.qx,
+      quad_state_.Horizontal_Tilt(), quad_state_.v, quad_state_.w,
+      quad_state_.a, quad_ptr_->getMotorOmega(), quad_ptr_->getMotorThrusts();
     return true;
   }
   logger_.error("Get Quadrotor state failed.");
@@ -642,8 +643,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     survive_rew_ = cfg["rewards"]["survive_rew"].as<Scalar>();
     world_box_coeff_ =
       cfg["rewards"]["world_box_coeff"].as<std::vector<Scalar>>();
-    attitude_coeff_ =
-      cfg["rewards"]["attitude_coeff"].as<std::vector<Scalar>>();
+    attitude_coeff_ = cfg["rewards"]["attitude_coeff"].as<Scalar>();
     command_coeff_ = cfg["rewards"]["command_coeff"].as<std::vector<Scalar>>();
 
 

@@ -19,6 +19,7 @@ columns = [
     "qx",
     "qy",
     "qz",
+    "Tilt",
     "vx",
     "vy",
     "vz",
@@ -110,6 +111,7 @@ def test_policy(env, model, render=False):
     act = np.zeros(7)
     past_act = np.zeros(7)
     step_num = 0
+    tilt = 0
     if render:
         env.connectUnity()
     for n_roll in range(num_rollouts):
@@ -130,6 +132,8 @@ def test_policy(env, model, render=False):
             step_num += 1
             #
             env.render(ep_len)
+
+            tilt += env.getQuadState()[0][8]
 
 
             # ======Gray Image=========
@@ -157,11 +161,8 @@ def test_policy(env, model, render=False):
             # cv2.imshow("depth", depth_img)
             # cv2.waitKey(100)
 
-            roll = env.getQuadState()[0][8]
-            pitch = env.getQuadState()[0][9]
-            yaw = env.getQuadState()[0][10]
             # print(roll)
-            print(pitch)
+            # print(tilt)
             # print(yaw)
 
 
@@ -171,6 +172,7 @@ def test_policy(env, model, render=False):
                     # reset the test, becuase the drone collide with object in the initial state
                     obs, done, ep_len = env.reset(), False, 0
                     print("reset the test, becuase the drone collide with object in the initial state")
+                    print(env.getQuadState()[0][0])
                     continue
                 final_x_list.append(final_x)
                 print("final x: {}".format(final_x))
@@ -192,5 +194,6 @@ def test_policy(env, model, render=False):
     print("standard deviation vel: {}".format(statistics.pstdev(ave_vel_list)))
 
     print("action difference: {}".format(np.round(np.sqrt(act_diff_sum/step_num),decimals = 2)))
+    print("tilt: {}".format(np.round(tilt/step_num,decimals = 2)))
     if render:
         env.disconnectUnity()

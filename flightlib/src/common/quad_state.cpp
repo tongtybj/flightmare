@@ -31,6 +31,12 @@ Vector<3> QuadState::Euler() const {
     .eulerAngles(0, 1, 2);
 }
 
+Scalar QuadState::Horizontal_Tilt() const {
+  Matrix<3, 3> R =
+    Quaternion(x(ATTW), x(ATTX), x(ATTY), x(ATTZ)).toRotationMatrix();
+  return std::acos(R(2, 2));
+}
+
 void QuadState::setZero() {
   t = 0.0;
   x.setZero();

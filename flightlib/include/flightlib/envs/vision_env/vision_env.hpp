@@ -33,7 +33,7 @@ namespace visionenv {
 
 enum Vision : int {
   //
-  kNQuadState = 25 + 3,
+  kNQuadState = 25 + 1,
 
   kNObstacles = 30,
   kNObstaclesState = 4,
@@ -149,7 +149,7 @@ class VisionEnv final : public EnvBase {
   Scalar move_coeff_, vel_coeff_, collision_coeff_, collision_exp_coeff_,
     angular_vel_coeff_, survive_rew_, dist_margin;
   std::vector<Scalar> world_box_coeff_;
-  std::vector<Scalar> attitude_coeff_;
+  Scalar attitude_coeff_;
   std::vector<Scalar> command_coeff_;
   Vector<3> goal_linear_vel_;
   bool is_collision_;
