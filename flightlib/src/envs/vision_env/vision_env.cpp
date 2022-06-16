@@ -70,8 +70,9 @@ void VisionEnv::init() {
   // act_std_ << (max_force / quad_ptr_->getMass()) / 2, max_omega.x(),
   //   max_omega.y(), max_omega.z();
 
-  act_mean_ << 35, 0, 5, 1, 0, 0, 0;
-  act_std_ << 35, 10, 5, 1, 1, 1, 1;  // set by my experience
+  act_mean_ << 0, 0, 0, 0, 0, 0, 0;
+  act_std_ << 0.6, 0.6, 0.3, 1.0, 1.0, 1.0,
+    0.1;  // set by my experience (cmd difference)
 
   collide_num = 0;
   time_num = 0;
@@ -373,9 +374,12 @@ bool VisionEnv::step(const Ref<Vector<>> act, Ref<Vector<>> obs,
   // cmd_.collective_thrust = old_pi_act_(0);
   // cmd_.omega = old_pi_act_.segment<3>(1);
 
-  cmd_.p = pi_act_.segment<3>(0);
-  cmd_.v = pi_act_.segment<3>(3);
-  cmd_.yaw = pi_act_(6);
+  Vector<3> euler = quad_state_.Euler();
+
+
+  cmd_.p = pi_act_.segment<3>(0) + quad_state_.p;
+  cmd_.v = pi_act_.segment<3>(3) + quad_state_.v;
+  cmd_.yaw = pi_act_(6) + euler[2];
 
   // simulate quadrotor
   quad_ptr_->run(cmd_, sim_dt_);
@@ -528,7 +532,7 @@ bool VisionEnv::isTerminalState(Scalar &reward) {
 
     iter += 1;
     // std::cout << "iter is " << iter << std::endl;
-    if (iter == 100) {
+    if (iter == 100 && fly_result_) {
       std::cout << "collide_num is " << collide_num << std::endl;
       std::cout << "time_num is " << time_num << std::endl;
       std::cout << "bound_num is " << bound_num << std::endl;
@@ -622,6 +626,7 @@ bool VisionEnv::loadParam(const YAML::Node &cfg) {
     max_detection_range_ =
       cfg["environment"]["max_detection_range"].as<Scalar>();
     goal_ = cfg["environment"]["goal"].as<Scalar>();
+    fly_result_ = cfg["environment"]["fly_result"].as<bool>();
   }
 
   if (cfg["simulation"]) {
