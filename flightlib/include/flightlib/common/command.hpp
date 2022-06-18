@@ -41,8 +41,8 @@ class Command {
   /// Collective mass-normalized thrust in [m/s^2]
   Scalar collective_thrust;
 
-  /// Euler
-  Vector<3> euler;
+  /// Quaternion
+  Matrix<3, 3> R;
 
   /// Bodyrates in [rad/s]
   Vector<3> omega;

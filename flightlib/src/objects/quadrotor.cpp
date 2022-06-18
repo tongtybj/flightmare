@@ -153,7 +153,8 @@ bool Quadrotor::updatePositionControl(const QuadState &state, Command &cmd) {
   }
 
   if (cmd.isThrustAttitude()) {
-    cmd.euler = q_des.toRotationMatrix().eulerAngles(0, 1, 2);
+    cmd.R = q_des.toRotationMatrix();
+    // std::cout << "cmd.q: " << q_des.x() << "," << q_des.y() << ", " << q_des.z() << ", " << q_des.w() << "; cmd_euler: " << cmd.R.eulerAngles(2, 1, 0).transpose()  << "; euler: " << state_.Euler().transpose() << std::endl;
   }
 
   return true;

@@ -7,7 +7,6 @@ Command::Command()
   : t(0.0),
     thrusts(0.0, 0.0, 0.0, 0.0),
     collective_thrust(0.0),
-    euler(0.0, 0.0, 0.0),
     omega(0.0, 0.0, 0.0),
     p(0.0, 0.0, 0.0),
     v(0.0, 0.0, 0.0),
@@ -32,7 +31,7 @@ bool Command::valid() const {
   return std::isfinite(t) &&
          (
           (p.allFinite() && v.allFinite() && std::isfinite(yaw) && need_position_control_) ||
-          (std::isfinite(collective_thrust) && euler.allFinite() &&
+          (std::isfinite(collective_thrust) && R.allFinite() &&
            (cmd_mode == quadcmd::THRUSTATT)) ||
           (std::isfinite(collective_thrust) && omega.allFinite() &&
            (cmd_mode == quadcmd::THRUSTRATE)) ||
@@ -50,7 +49,7 @@ bool Command::isThrustRates() const {
 
 bool Command::isThrustAttitude() const {
   return (cmd_mode == quadcmd::THRUSTATT) &&
-         (std::isfinite(collective_thrust) && euler.allFinite());
+         (std::isfinite(collective_thrust) && R.allFinite());
 }
 
 bool Command::needPositionControl() const {
@@ -63,11 +62,12 @@ void Command::setZeros() {
   collective_thrust = 0;
   yaw = 0;
 
-  euler = Vector<3>::Zero();
+  R = Matrix<3, 3>::Zero();
   p = Vector<3>::Zero();
   v = Vector<3>::Zero();
   thrusts = Vector<4>::Zero();
   omega = Vector<3>::Zero();
+
 }
 
 }  // namespace flightlib
