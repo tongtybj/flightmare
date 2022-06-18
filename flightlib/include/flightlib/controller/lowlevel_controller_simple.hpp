@@ -1,6 +1,7 @@
 #pragma once
 
 #include "flightlib/common/command.hpp"
+#include "flightlib/common/quad_state.hpp"
 #include "flightlib/common/types.hpp"
 #include "flightlib/dynamics/quadrotor_dynamics.hpp"
 
@@ -12,7 +13,7 @@ class LowLevelControllerSimple {
 
   LowLevelControllerSimple(QuadrotorDynamics quad_dynamics);
   bool setCommand(const Command& cmd);
-  Vector<4> run(const Ref<Vector<3>> omega);
+  Vector<4> run(const QuadState& state);
   bool updateQuadDynamics(const QuadrotorDynamics& quad_dynamics);
 
  private:

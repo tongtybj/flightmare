@@ -34,6 +34,7 @@ class Quadrotor : ObjectBase {
   bool run(const Scalar dt) override;
   bool run(Command& cmd, const Scalar dt);
 
+  // outer loop controller
   bool updatePositionControl(const QuadState& state, Command& cmd);
 
   // public get functions

@@ -36,7 +36,7 @@ Quadrotor::~Quadrotor() {}
 
 bool Quadrotor::run(Command &cmd, const Scalar ctl_dt) {
 
-  if (cmd.isLinerVel()) {
+  if (cmd.needPositionControl()) {
     updatePositionControl(state_, cmd);
   }
 
@@ -70,8 +70,7 @@ bool Quadrotor::run(const Scalar ctl_dt) {
   while (remain_ctl_dt > 0.0) {
     const Scalar sim_dt = std::min(remain_ctl_dt, max_dt);
 
-    const Vector<4> motor_thrusts_des =
-      cmd_.isSingleRotorThrusts() ? cmd_.thrusts : ctrl_.run(state_.w);
+    const Vector<4> motor_thrusts_des = ctrl_.run(state_);
     runMotors(sim_dt, motor_thrusts_des);
 
     Vector<4> force_torques = B_allocation_ * motor_thrusts_;
@@ -133,22 +132,29 @@ bool Quadrotor::updatePositionControl(const QuadState &state, Command &cmd) {
   Matrix<3, 3> R_W_B((Matrix<3, 3>() << x_B, y_B, z_B).finished());
   Quaternion q_des(R_W_B);  // desired quaternion by cmd.yaw and acc_cmd
 
-  // angular acceleration command
-  // Attitude control method from Fohn 2020.
-  const Quaternion q_e = state.q().inverse() * q_des;
-
-  Matrix<3, 3> T_att = (Matrix<3, 3>() << dynamics_.kpatt_xy_, 0.0, 0.0, 0.0,
-                        dynamics_.kpatt_xy_, 0.0, 0.0, 0.0, dynamics_.kpatt_z_)
-                         .finished();
-  Vector<3> tmp = Vector<3>(q_e.w() * q_e.x() - q_e.y() * q_e.z(),
-                            q_e.w() * q_e.y() + q_e.x() * q_e.z(), q_e.z());
-  if (q_e.w() <= 0) tmp(2) *= -1.0;
-  Vector<3> omega_cmd = 2.0 / std::sqrt(q_e.w() * q_e.w() + q_e.z() * q_e.z()) * T_att * tmp;
-
   // Command command;
   cmd.t = state.t;
-  cmd.omega = omega_cmd;
   cmd.collective_thrust = thrust_cmd / dynamics_.getMass();
+
+  if (cmd.isThrustRates()) {
+    // angular acceleration command
+    // Attitude control method from Fohn 2020.
+    const Quaternion q_e = state.q().inverse() * q_des;
+    Matrix<3, 3> T_att = (Matrix<3, 3>() << dynamics_.kpatt_xy_, 0.0, 0.0, 0.0,
+                          dynamics_.kpatt_xy_, 0.0, 0.0, 0.0, dynamics_.kpatt_z_)
+      .finished();
+    Vector<3> tmp = Vector<3>(q_e.w() * q_e.x() - q_e.y() * q_e.z(),
+                              q_e.w() * q_e.y() + q_e.x() * q_e.z(), q_e.z());
+    if (q_e.w() <= 0) tmp(2) *= -1.0;
+    Vector<3> omega_cmd = 2.0 / std::sqrt(q_e.w() * q_e.w() + q_e.z() * q_e.z()) * T_att * tmp;
+
+    // Command command;
+    cmd.omega = omega_cmd;
+  }
+
+  if (cmd.isThrustAttitude()) {
+    cmd.euler = q_des.toRotationMatrix().eulerAngles(0, 1, 2);
+  }
 
   return true;
 }

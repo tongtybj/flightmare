@@ -30,14 +30,15 @@ bool LowLevelControllerSimple::setCommand(const Command& cmd) {
 }
 
 
-Vector<4> LowLevelControllerSimple::run(const Ref<Vector<3>> omega_des) {
+Vector<4> LowLevelControllerSimple::run(const QuadState& state) {
   Vector<4> motor_thrusts;
-  if (!cmd_.isSingleRotorThrusts()) {
+  if (cmd_.isThrustRates()) {
+    const Vector<3> omega = state.w;
     const Scalar force = quad_dynamics_.getMass() * cmd_.collective_thrust;
-    const Vector<3> omega_err = cmd_.omega - omega_des;
+    const Vector<3> omega_err = cmd_.omega - omega;
     const Vector<3> body_torque_des =
       quad_dynamics_.getJ() * Kinv_ang_vel_tau_ * omega_err +
-      omega_des.cross(quad_dynamics_.getJ() * omega_des);
+      omega.cross(quad_dynamics_.getJ() * omega);
     const Vector<4> thrust_torque(force, body_torque_des.x(),
                                   body_torque_des.y(), body_torque_des.z());
 
